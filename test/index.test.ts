@@ -124,37 +124,46 @@ test("each pulled pairing becomes its own model with the family thinking map", (
   assert.deepEqual(gemma.input, ["text", "image"]);
   assert.equal(gemma.samplingParams?.top_k, 64);
   assert.ok(models.every((m) => m.reasoning && m.cost.input === 0));
+  const as = (family: string) => ({ ...toModels([{ id: "n", target: "n", draft: null, kind: null, family }])[0], id: "", name: "" });
+  for (const [name, k] of Object.entries<any>(CATALOG)) if (k.family) assert.notDeepEqual(as(k.family), as("default"), `${name}: family ${k.family} is not in FAMILIES`);
+  assert.deepEqual(as("glimmer").thinkingLevelMap, { off: null, minimal: null, low: "low", medium: "medium", high: "high", xhigh: "xhigh" });
 });
 
-test("pull plan saves into the models folder: every catalog drafter, DFlash downloaded to a temp dir and converted to 4-bit once", () => {
-  const tmp = join(tmpdir(), "pi-mlx", "Qwen3.5-9B-DFlash");
+test("pull plan downloads the model and every catalog drafter as published into the models folder; other quantizations of a catalog model keep its drafters", () => {
   const plan = planPull("qwen3.5-9b", [], undefined, "/m");
   assert.deepEqual(plan.steps.map((s) => [s.cmd, ...s.args]), [
     ["hf", "download", Q35, "--local-dir", `/m/${Q35}`],
-    ["hf", "download", "z-lab/Qwen3.5-9B-DFlash", "--local-dir", tmp],
-    ["mlx_vlm.convert", "--hf-path", tmp, "--mlx-path", "/m/z-lab/Qwen3.5-9B-DFlash-4bit", "--quantize", "--q-bits", "4", "--q-group-size", "64"],
+    ["hf", "download", "z-lab/Qwen3.5-9B-DFlash", "--local-dir", "/m/z-lab/Qwen3.5-9B-DFlash"],
     ["hf", "download", "mlx-community/Qwen3.5-9B-MTP-4bit", "--local-dir", "/m/mlx-community/Qwen3.5-9B-MTP-4bit"],
   ]);
   assert.match(plan.steps[0].label, /6 GB/);
   assert.deepEqual(plan.entries.map((e) => [e.id, e.path, e.draft, e.kind]), [
     ["qwen3.5-9b", `/m/${Q35}`, null, null],
-    ["qwen3.5-9b@dflash", `/m/${Q35}`, "/m/z-lab/Qwen3.5-9B-DFlash-4bit", "dflash"],
+    ["qwen3.5-9b@dflash", `/m/${Q35}`, "/m/z-lab/Qwen3.5-9B-DFlash", "dflash"],
     ["qwen3.5-9b@mtp", `/m/${Q35}`, "/m/mlx-community/Qwen3.5-9B-MTP-4bit", "mtp"],
   ]);
-  assert.deepEqual(plan.cleanup, [tmp]);
   assert.deepEqual(plan.warnings, []);
-  assert.deepEqual(plan.block, { path: "/m/z-lab/Qwen3.5-9B-DFlash-4bit", size: 4 });
+  assert.deepEqual(plan.block, { path: "/m/z-lab/Qwen3.5-9B-DFlash", size: 4 });
   assert.deepEqual(planPull(Q35, ["mtp"], undefined, "/m").entries.map((e) => e.id), ["qwen3.5-9b", "qwen3.5-9b@mtp"]);
   const q38 = planPull("qwen3.8-27b", ["dflash2"], undefined, "/m");
-  assert.deepEqual(q38.entries[1], { id: "qwen3.8-27b@dflash2", target: "mlx-community/Qwen3.8-27B-4bit", path: "/m/mlx-community/Qwen3.8-27B-4bit", draft: "/m/z-lab/Qwen3.8-27B-DFlash2-4bit", kind: "dflash", family: "qwen3.8" });
+  assert.deepEqual(q38.entries[1], { id: "qwen3.8-27b@dflash2", target: "mlx-community/Qwen3.8-27B-4bit", path: "/m/mlx-community/Qwen3.8-27B-4bit", draft: "/m/z-lab/Qwen3.8-27B-DFlash2", kind: "dflash", family: "qwen3.8" });
   assert.equal(q38.block, undefined);
+  const q8 = planPull("mlx-community/Qwen3.5-9B-8bit", [], undefined, "/m");
+  assert.deepEqual(q8.steps.map((s) => s.args[1]), ["mlx-community/Qwen3.5-9B-8bit", "z-lab/Qwen3.5-9B-DFlash", "mlx-community/Qwen3.5-9B-MTP-4bit"]);
+  assert.deepEqual(q8.entries.map((e) => [e.id, e.target, e.family]), [
+    ["mlx-community/Qwen3.5-9B-8bit", "mlx-community/Qwen3.5-9B-8bit", "qwen3.5"],
+    ["mlx-community/Qwen3.5-9B-8bit@dflash", "mlx-community/Qwen3.5-9B-8bit", "qwen3.5"],
+    ["mlx-community/Qwen3.5-9B-8bit@mtp", "mlx-community/Qwen3.5-9B-8bit", "qwen3.5"],
+  ]);
+  assert.deepEqual(q8.warnings, []);
+  assert.equal(planPull("mlx-community/Muse-Glimmer-30B-bf16", [], undefined, "/m").entries[1].id, "mlx-community/Muse-Glimmer-30B-bf16@dflash2");
   const lfm = planPull("lfm2.5-2.6b", [], undefined, "/m");
   assert.deepEqual(lfm.steps.map((s) => s.args[1]), ["LiquidAI/LFM2.5-2.6B", "LiquidAI/LFM2.5-2.6B-DSpark"]);
   assert.deepEqual(lfm.entries[1], { id: "lfm2.5-2.6b@dspark", target: "LiquidAI/LFM2.5-2.6B", path: "/m/LiquidAI/LFM2.5-2.6B", draft: "/m/LiquidAI/LFM2.5-2.6B-DSpark", kind: "dflash", family: "default" });
   assert.deepEqual(planPull("lfm3-1.7b", [], undefined, "/m").entries.map((e) => e.id), ["lfm3-1.7b"]);
 });
 
-test("DFlash block size is written into the converted drafter config", () => {
+test("DFlash block size is written into the drafter config", () => {
   const dir = mkdtempSync(join(tmpdir(), "drafter-"));
   writeFileSync(join(dir, "config.json"), JSON.stringify({ model_type: "qwen3", block_size: 16 }));
   setBlock(dir, 4);

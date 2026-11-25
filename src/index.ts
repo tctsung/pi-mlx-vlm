@@ -34,6 +34,12 @@ const FAMILIES: Record<string, Pick<ChatModel, "input" | "contextWindow" | "thin
     samplingParamsByThinkingLevel: { off: { temperature: 0.7, top_p: 0.8 } },
   },
   gemma4: { input: ["text", "image"], contextWindow: 131072, thinkingLevelMap: ON_OFF, samplingParams: { temperature: 1, top_p: 0.95, top_k: 64 } },
+  glimmer: {
+    input: ["text", "image"],
+    contextWindow: 131072,
+    thinkingLevelMap: { off: null, minimal: null, low: "low", medium: "medium", high: "high", xhigh: "xhigh" },
+    samplingParams: { temperature: 1, top_p: 0.95, top_k: 64 },
+  },
   "lfm3-vl": { input: ["text", "image"], contextWindow: 32768, thinkingLevelMap: ON_OFF },
   default: { input: ["text"], contextWindow: 32768, thinkingLevelMap: ON_OFF },
 };
@@ -110,7 +116,7 @@ export default function (pi: ExtensionAPI) {
     }
     if (state === "mlx") return;
     const exe = bin("mlx_vlm.server");
-    if (!exe) throw new Error("mlx-vlm is not installed. Run pi-mlx in a terminal");
+    if (!exe) throw new Error("mlx-vlm is not installed. Run pi-mlx pull in a terminal");
     mkdirSync(HOME, { recursive: true });
     const log = openSync(LOG, "a");
     ctx.ui.setStatus("mlx", "mlx: starting server");
@@ -137,7 +143,7 @@ export default function (pi: ExtensionAPI) {
       say(ctx, [
         `server ${server()}: ${health ? `up, loaded ${health.loaded_model ?? "nothing"}` : "down (starts on the first mlx request)"}`,
         draft ? `drafter: ${draft.draft_model ?? "none"} (${draft.draft_kind ?? "-"})` : "",
-        `models: ${load().map((m) => `mlx/${m.id}`).join(", ") || "none yet. Run pi-mlx in a terminal to pull one"}`,
+        `models: ${load().map((m) => `mlx/${m.id}`).join(", ") || "none yet. Run pi-mlx pull in a terminal"}`,
       ].filter(Boolean).join("\n"));
     },
     async unload(_, ctx) {

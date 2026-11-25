@@ -6,6 +6,7 @@
   "gemma4-31b": { "repo": "mlx-community/gemma-4-31B-it-4bit", "family": "gemma4", "gb": 18, "mtp": "mlx-community/gemma-4-31B-it-assistant-bf16", "dflash": "z-lab/gemma-4-31B-it-DFlash" },
   "gemma4-26b-a4b": { "repo": "mlx-community/gemma-4-26B-A4B-it-4bit", "family": "gemma4", "gb": 15, "mtp": "mlx-community/gemma-4-26B-A4B-it-assistant-bf16", "dflash": "z-lab/gemma-4-26B-A4B-it-DFlash" },
   "gemma4-e4b": { "repo": "mlx-community/gemma-4-E4B-it-4bit", "family": "gemma4", "gb": 5, "mtp": "mlx-community/gemma-4-E4B-it-assistant-bf16" },
+  "glimmer-30b": { "repo": "mlx-community/Muse-Glimmer-30B-4bit", "family": "glimmer", "gb": 19, "dflash2": "z-lab/Muse-Glimmer-30B-DFlash2" },
   "lfm2.5-2.6b": { "repo": "LiquidAI/LFM2.5-2.6B", "gb": 5, "dspark": "LiquidAI/LFM2.5-2.6B-DSpark" },
   "lfm3-1.7b": { "repo": "LiquidAI/LFM3-1.7B", "gb": 3.5 },
   "lfm3-vl-2b": { "repo": "LiquidAI/LFM3-VL-2B", "family": "lfm3-vl", "gb": 4 }

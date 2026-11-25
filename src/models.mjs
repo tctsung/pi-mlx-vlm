@@ -1,7 +1,7 @@
 // Shared by the Pi extension and the pi-mlx CLI: paths, the catalog of easy model names, pull plans into the permanent models folder, and the pulled-models file Pi reads.
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { homedir, tmpdir } from "node:os";
-import { basename, join } from "node:path";
+import { homedir } from "node:os";
+import { join } from "node:path";
 
 export const AGENT_DIR = process.env.PI_CODING_AGENT_DIR ?? join(homedir(), ".pi", "agent");
 export const PULLED = join(AGENT_DIR, "mlx-vlm.json");
@@ -12,6 +12,8 @@ export const LABEL = { dflash2: "DFlash2", dflash: "DFlash", dspark: "DSpark", m
 
 export const CATALOG = JSON.parse(readFileSync(new URL("../catalog.json", import.meta.url), "utf8"));
 export const known = (t) => Object.entries(CATALOG).find(([name, k]) => name === t || k.repo === t);
+const stem = (repo) => repo.replace(/-(\d+bit|bf16|mxfp\d|nvfp4)$/i, "");
+const sibling = (repo) => Object.values(CATALOG).find((k) => stem(k.repo) === stem(repo));
 export const method = (id) => id.split("@")[1] ?? "";
 export const methods = (k) => METHODS.filter((m) => k?.[m]);
 export const rank = (id) => [...METHODS, ""].indexOf(method(id));
@@ -19,14 +21,14 @@ export const load = () => (existsSync(PULLED) ? JSON.parse(readFileSync(PULLED, 
 export const bin = (name) => [join(homedir(), ".local", "bin"), ...(process.env.PATH ?? "").split(":")].map((d) => join(d, name)).find((p) => existsSync(p));
 
 export function planPull(name, wanted, draft, models = MODELS) {
-  const [easy, k] = known(name) ?? [name, undefined];
-  const target = k?.repo ?? name;
+  const [easy, exact] = known(name) ?? [name, undefined];
+  const k = exact ?? sibling(name);
+  const target = exact?.repo ?? name;
   const family = k?.family ?? "default";
   const path = join(models, target);
-  const steps = [{ label: `${target}${k?.gb ? `, ${k.gb} GB` : ""}`, cmd: "hf", args: ["download", target, "--local-dir", path] }];
+  const steps = [{ label: `${target}${exact?.gb ? `, ${exact.gb} GB` : ""}`, cmd: "hf", args: ["download", target, "--local-dir", path] }];
   const entries = [{ id: easy, target, path, draft: null, kind: null, family }];
   const warnings = [];
-  const cleanup = [];
   let block;
   if (!k && !wanted.length) warnings.push(`${target} is not in the catalog, so only the plain model is added. For a drafter: pi-mlx pull ${target} <${METHODS.join("|")}> --draft <repo>`);
   for (const m of wanted.length ? wanted : methods(k)) {
@@ -35,19 +37,12 @@ export function planPull(name, wanted, draft, models = MODELS) {
       warnings.push(`No known ${LABEL[m]} drafter for ${easy}; pass --draft <repo>`);
       continue;
     }
-    const convert = m === "dflash" || m === "dflash2";
-    const out = join(models, convert ? `${repo}-4bit` : repo);
-    if (!convert) steps.push({ label: `${LABEL[m]} drafter ${repo}`, cmd: "hf", args: ["download", repo, "--local-dir", out] });
-    else if (!existsSync(out)) {
-      const src = join(tmpdir(), "pi-mlx", basename(repo));
-      steps.push({ label: `${LABEL[m]} drafter ${repo}`, cmd: "hf", args: ["download", repo, "--local-dir", src] });
-      steps.push({ label: `${LABEL[m]} drafter to 4-bit`, cmd: "mlx_vlm.convert", args: ["--hf-path", src, "--mlx-path", out, "--quantize", "--q-bits", "4", "--q-group-size", "64"] });
-      cleanup.push(src);
-    }
-    if (convert && !draft && k?.block) block = { path: out, size: k.block };
+    const out = join(models, repo);
+    steps.push({ label: `${LABEL[m]} drafter ${repo}`, cmd: "hf", args: ["download", repo, "--local-dir", out] });
+    if (m !== "mtp" && !draft && k?.block) block = { path: out, size: k.block };
     entries.push({ id: `${easy}@${m}`, target, path, draft: out, kind: m === "mtp" ? "mtp" : "dflash", family });
   }
-  return { steps, entries, warnings, block, cleanup };
+  return { steps, entries, warnings, block };
 }
 
 export function save(entries) {

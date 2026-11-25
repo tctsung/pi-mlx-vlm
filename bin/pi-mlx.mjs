@@ -6,7 +6,7 @@ import { emitKeypressEvents } from "node:readline";
 import { createInterface } from "node:readline/promises";
 import { CATALOG, LABEL, MODELS, PULLED, bin, known, load, method, methods, parsePullArgs, planPull, rank, save, setBlock } from "../src/models.mjs";
 
-const USAGE = `pi-mlx                                   pick a model (arrow keys, Enter pulls it)
+const USAGE = `pi-mlx pull                              pick from the built-in list (arrow keys, Enter pulls)
 pi-mlx pull <name|repo> [mtp|dflash|dflash2|dspark] [--draft <repo>]
 pi-mlx list                              pulled models and where they are
 pi-mlx rm <name|repo>                    delete a pulled model and its drafters
@@ -76,7 +76,6 @@ async function pull(text) {
     run(s.cmd, s.args);
   });
   if (plan.block) setBlock(plan.block.path, plan.block.size);
-  for (const dir of plan.cleanup) rmSync(dir, { recursive: true, force: true });
   save(plan.entries);
   const ids = plan.entries.map((e) => e.id).sort((a, b) => rank(a) - rank(b));
   console.log(`\nDone. In Pi, pick it with /model: ${ids.map((id) => `mlx/${id}`).join(", ")} (fastest first).`);
@@ -101,7 +100,7 @@ async function pick() {
 
 function list() {
   const pulled = load();
-  if (!pulled.length) return console.log("No models pulled yet. Run: pi-mlx");
+  if (!pulled.length) return console.log("No models pulled yet. Run: pi-mlx pull");
   for (const m of pulled.sort((a, b) => a.target.localeCompare(b.target) || rank(a.id) - rank(b.id))) console.log(`mlx/${m.id.padEnd(28)} ${m.path ?? `${m.target} (Hugging Face cache)`}`);
 }
 
@@ -123,10 +122,9 @@ function rm(name) {
 
 const [cmd = "", ...rest] = process.argv.slice(2);
 try {
-  if (cmd === "pull") await pull(rest.join(" "));
+  if (cmd === "pull") await (rest.length ? pull(rest.join(" ")) : pick());
   else if (cmd === "list" || cmd === "ls") list();
   else if (cmd === "rm" && rest[0]) rm(rest[0]);
-  else if (!cmd) await pick();
   else console.log(USAGE);
 } catch (err) {
   console.error(`pi-mlx: ${err.message}`);
