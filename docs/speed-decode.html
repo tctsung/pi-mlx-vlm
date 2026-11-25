@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Decode speed, tokens per second</title>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Geist', system-ui, sans-serif; background: #f5f5f5; color: #2d3142; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 3rem 2rem; }
+    .frame { max-width: 1200px; width: 100%; }
+    .eyebrow { font-family: 'Geist Mono', ui-monospace, monospace; font-size: 0.66rem; font-weight: 500; letter-spacing: 0.18em; text-transform: uppercase; color: #4f5d75; margin-bottom: 0.5rem; }
+    h1 { font-family: 'Instrument Serif', serif; font-size: clamp(1.5rem, 2.4vw + 0.75rem, 2rem); font-weight: 400; letter-spacing: -0.02em; line-height: 1.15; margin-bottom: 1.5rem; }
+    .scroll { overflow-x: auto; }
+    svg { width: 100%; min-width: 1000px; display: block; }
+  </style>
+</head>
+<body>
+  <div class="frame">
+    <p class="eyebrow">Bar · pi-mlx-vlm benchmark</p>
+    <h1>Decode speed, tokens per second</h1>
+    <div class="scroll">
+    <svg viewBox="0 0 1000 500" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="speed-decode-title speed-decode-desc">
+  <title id="speed-decode-title">Decode speed, tokens per second</title>
+  <desc id="speed-decode-desc">Mean streamed decode speed per engine and thinking level over 9 sampled 512-token generations; higher is better.</desc>
+  <defs><pattern id="speed-decode-dots" width="22" height="22" patternUnits="userSpaceOnUse"><circle cx="1" cy="1" r="0.9" fill="rgba(45,49,66,0.1)"/></pattern></defs>
+  <rect width="100%" height="100%" fill="#f5f5f5"/>
+  <rect width="100%" height="100%" fill="url(#speed-decode-dots)" opacity="0.55"/>
+  <line x1="80" y1="357" x2="960" y2="357" stroke="rgba(45,49,66,0.08)" stroke-width="0.8"/>
+  <text x="72" y="361" fill="#4f5d75" font-size="8" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="end">10</text>
+  <line x1="80" y1="293" x2="960" y2="293" stroke="rgba(45,49,66,0.08)" stroke-width="0.8"/>
+  <text x="72" y="297" fill="#4f5d75" font-size="8" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="end">20</text>
+  <line x1="80" y1="230" x2="960" y2="230" stroke="rgba(45,49,66,0.08)" stroke-width="0.8"/>
+  <text x="72" y="234" fill="#4f5d75" font-size="8" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="end">30</text>
+  <line x1="80" y1="167" x2="960" y2="167" stroke="rgba(45,49,66,0.08)" stroke-width="0.8"/>
+  <text x="72" y="171" fill="#4f5d75" font-size="8" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="end">40</text>
+  <line x1="80" y1="103" x2="960" y2="103" stroke="rgba(45,49,66,0.08)" stroke-width="0.8"/>
+  <text x="72" y="107" fill="#4f5d75" font-size="8" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="end">50</text>
+  <line x1="80" y1="40" x2="960" y2="40" stroke="rgba(45,49,66,0.08)" stroke-width="0.8"/>
+  <text x="72" y="44" fill="#4f5d75" font-size="8" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="end">60</text>
+  <line x1="80" y1="40" x2="80" y2="420" stroke="rgba(45,49,66,0.25)" stroke-width="1"/>
+  <line x1="80" y1="420" x2="960" y2="420" stroke="rgba(45,49,66,0.25)" stroke-width="1"/>
+  <text transform="rotate(-90 24 230)" x="24" y="230" fill="#4f5d75" font-size="7" font-family="'Geist Mono', ui-monospace, monospace" letter-spacing="0.14em" text-anchor="middle">TOKENS / SECOND</text>
+  <rect x="114" y="286" width="72" height="134" fill="#f5f5f5"/>
+  <rect x="114" y="286" width="72" height="134" fill="rgba(124,143,111,0.15)" stroke="#7c8f6f" stroke-width="1"/>
+  <text x="150" y="278" fill="#4f5d75" font-size="8" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle">21.2</text>
+  <rect x="194" y="286" width="72" height="134" fill="#f5f5f5"/>
+  <rect x="194" y="286" width="72" height="134" fill="rgba(191,69,32,0.12)" stroke="#bf4520" stroke-width="1"/>
+  <text x="230" y="278" fill="#4f5d75" font-size="8" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle">21.2</text>
+  <text x="190" y="440" fill="#2d3142" font-size="11" font-weight="600" font-family="'Geist', system-ui, sans-serif" text-anchor="middle">Ollama (MLX)</text>
+  <rect x="334" y="260" width="72" height="160" fill="#f5f5f5"/>
+  <rect x="334" y="260" width="72" height="160" fill="rgba(124,143,111,0.15)" stroke="#7c8f6f" stroke-width="1"/>
+  <text x="370" y="252" fill="#4f5d75" font-size="8" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle">25.3</text>
+  <rect x="414" y="250" width="72" height="170" fill="#f5f5f5"/>
+  <rect x="414" y="250" width="72" height="170" fill="rgba(191,69,32,0.12)" stroke="#bf4520" stroke-width="1"/>
+  <text x="450" y="242" fill="#4f5d75" font-size="8" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle">26.8</text>
+  <text x="410" y="440" fill="#2d3142" font-size="11" font-weight="600" font-family="'Geist', system-ui, sans-serif" text-anchor="middle">mlx-vlm</text>
+  <rect x="554" y="154" width="72" height="266" fill="#f5f5f5"/>
+  <rect x="554" y="154" width="72" height="266" fill="rgba(124,143,111,0.15)" stroke="#7c8f6f" stroke-width="1"/>
+  <text x="590" y="146" fill="#4f5d75" font-size="8" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle">42.0</text>
+  <rect x="634" y="157" width="72" height="263" fill="#f5f5f5"/>
+  <rect x="634" y="157" width="72" height="263" fill="rgba(191,69,32,0.12)" stroke="#bf4520" stroke-width="1"/>
+  <text x="670" y="149" fill="#4f5d75" font-size="8" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle">41.4</text>
+  <text x="630" y="440" fill="#2d3142" font-size="11" font-weight="600" font-family="'Geist', system-ui, sans-serif" text-anchor="middle">mlx-vlm + MTP</text>
+  <rect x="774" y="114" width="72" height="306" fill="#f5f5f5"/>
+  <rect x="774" y="114" width="72" height="306" fill="rgba(124,143,111,0.15)" stroke="#7c8f6f" stroke-width="1"/>
+  <text x="810" y="106" fill="#4f5d75" font-size="8" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle">48.3</text>
+  <rect x="854" y="108" width="72" height="312" fill="#f5f5f5"/>
+  <rect x="854" y="108" width="72" height="312" fill="rgba(191,69,32,0.12)" stroke="#bf4520" stroke-width="1"/>
+  <text x="890" y="100" fill="#4f5d75" font-size="8" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle">49.2</text>
+  <text x="850" y="440" fill="#2d3142" font-size="11" font-weight="600" font-family="'Geist', system-ui, sans-serif" text-anchor="middle">mlx-vlm + DFlash</text>
+  <line x1="40" y1="462" x2="960" y2="462" stroke="rgba(45,49,66,0.1)" stroke-width="0.8"/>
+  <text x="40" y="478" fill="#4f5d75" font-size="8" font-family="'Geist Mono', ui-monospace, monospace" letter-spacing="0.18em">LEGEND</text>
+  <rect x="40" y="488" width="16" height="10" rx="2" fill="rgba(124,143,111,0.12)" stroke="#7c8f6f" stroke-width="1"/>
+  <text x="64" y="497" fill="#4f5d75" font-size="8.5" font-family="'Geist', system-ui, sans-serif">Thinking off · higher is better</text>
+  <rect x="240" y="488" width="16" height="10" rx="2" fill="rgba(191,69,32,0.12)" stroke="#bf4520" stroke-width="1"/>
+  <text x="264" y="497" fill="#4f5d75" font-size="8.5" font-family="'Geist', system-ui, sans-serif">Thinking on · higher is better</text>
+  <text x="960" y="497" fill="#4f5d75" font-size="8" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="end">Apple M3 Pro · Qwen3.5-9B-4bit vs ollama qwen3.5:9b-mlx</text>
+</svg>
+    </div>
+  </div>
+</body>
+</html>

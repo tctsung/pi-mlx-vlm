@@ -1,0 +1,275 @@
+{
+  "date": "2026-11-25T06:35:50.083Z",
+  "machine": "Apple M3 Pro",
+  "ollama": "qwen3.8:27b-mlx",
+  "mlx": "mlx-community/Qwen3.8-27B-4bit",
+  "task": "Create fib.py with fib(n) returning the nth Fibonacci number (fib(0)=0) and test_fib.py with 3 unittest cases. Run python3 -m unittest and report the result.",
+  "decode": [
+    {
+      "label": "Ollama (MLX)",
+      "thinking": "off",
+      "runs": [
+        {
+          "tps": 23.862672235899936,
+          "ttft": 0.9175570420000003,
+          "tokens": 512
+        },
+        {
+          "tps": 20.821595790281386,
+          "ttft": 0.5803535420000008,
+          "tokens": 512
+        },
+        {
+          "tps": 25.83882061434237,
+          "ttft": 0.5550661659999969,
+          "tokens": 493
+        }
+      ]
+    },
+    {
+      "label": "Ollama (MLX)",
+      "thinking": "low",
+      "runs": [
+        {
+          "tps": 22.214485513458207,
+          "ttft": 0.8328684590000048,
+          "tokens": 512
+        },
+        {
+          "tps": 22.74268650921445,
+          "ttft": 0.8341060829999914,
+          "tokens": 512
+        },
+        {
+          "tps": 20.420373672557687,
+          "ttft": 0.5627531670000026,
+          "tokens": 512
+        }
+      ]
+    },
+    {
+      "label": "mlx-vlm",
+      "thinking": "off",
+      "runs": [
+        {
+          "tps": 8.70606245435219,
+          "ttft": 1.1009699580000014,
+          "tokens": 512
+        },
+        {
+          "tps": 8.677564727987484,
+          "ttft": 0.7651367500000051,
+          "tokens": 512
+        },
+        {
+          "tps": 8.75460472505748,
+          "ttft": 1.0174452920000185,
+          "tokens": 445
+        }
+      ]
+    },
+    {
+      "label": "mlx-vlm",
+      "thinking": "low",
+      "runs": [
+        {
+          "tps": 8.710313033380618,
+          "ttft": 1.0412226670000237,
+          "tokens": 512
+        },
+        {
+          "tps": 8.696530145051721,
+          "ttft": 1.4278339159999742,
+          "tokens": 512
+        },
+        {
+          "tps": 8.486392510304265,
+          "ttft": 0.8398209999999963,
+          "tokens": 512
+        }
+      ]
+    },
+    {
+      "label": "mlx-vlm + MTP",
+      "thinking": "off",
+      "runs": [
+        {
+          "tps": 18.595188178242005,
+          "ttft": 0.9510060829999857,
+          "tokens": 512
+        },
+        {
+          "tps": 16.540492765141128,
+          "ttft": 0.7053412089999765,
+          "tokens": 512
+        },
+        {
+          "tps": 18.97335939292002,
+          "ttft": 0.9476752920000581,
+          "tokens": 445
+        }
+      ]
+    },
+    {
+      "label": "mlx-vlm + MTP",
+      "thinking": "low",
+      "runs": [
+        {
+          "tps": 16.52966286616369,
+          "ttft": 0.9703284589999821,
+          "tokens": 512
+        },
+        {
+          "tps": 15.636279514515094,
+          "ttft": 1.363251333000022,
+          "tokens": 512
+        },
+        {
+          "tps": 16.931343248690226,
+          "ttft": 0.7661826250000159,
+          "tokens": 512
+        }
+      ]
+    },
+    {
+      "label": "mlx-vlm + DFlash",
+      "thinking": "off",
+      "runs": [
+        {
+          "tps": 19.35430173550458,
+          "ttft": 0.9553688749999274,
+          "tokens": 512
+        },
+        {
+          "tps": 17.07294676693211,
+          "ttft": 0.6717788329999894,
+          "tokens": 512
+        },
+        {
+          "tps": 19.60469888086202,
+          "ttft": 0.9307720419999678,
+          "tokens": 445
+        }
+      ]
+    },
+    {
+      "label": "mlx-vlm + DFlash",
+      "thinking": "low",
+      "runs": [
+        {
+          "tps": 15.989725709436783,
+          "ttft": 0.9724132079998963,
+          "tokens": 512
+        },
+        {
+          "tps": 15.432546279819169,
+          "ttft": 1.3251175829998683,
+          "tokens": 512
+        },
+        {
+          "tps": 17.451441910929788,
+          "ttft": 0.7183395000000019,
+          "tokens": 512
+        }
+      ]
+    }
+  ],
+  "tasks": [
+    {
+      "label": "Ollama (MLX)",
+      "thinking": "off",
+      "runs": [
+        {
+          "secs": 68.408340708,
+          "ok": true,
+          "turns": 3,
+          "output": 547
+        }
+      ]
+    },
+    {
+      "label": "Ollama (MLX)",
+      "thinking": "low",
+      "runs": [
+        {
+          "secs": 69.62944775000003,
+          "ok": true,
+          "turns": 3,
+          "output": 566
+        }
+      ]
+    },
+    {
+      "label": "mlx-vlm",
+      "thinking": "off",
+      "runs": [
+        {
+          "secs": 105.2333835,
+          "ok": true,
+          "turns": 3,
+          "output": 407
+        }
+      ]
+    },
+    {
+      "label": "mlx-vlm",
+      "thinking": "low",
+      "runs": [
+        {
+          "secs": 112.47586916600005,
+          "ok": true,
+          "turns": 3,
+          "output": 466
+        }
+      ]
+    },
+    {
+      "label": "mlx-vlm + MTP",
+      "thinking": "off",
+      "runs": [
+        {
+          "secs": 81.11013754200005,
+          "ok": true,
+          "turns": 3,
+          "output": 407
+        }
+      ]
+    },
+    {
+      "label": "mlx-vlm + MTP",
+      "thinking": "low",
+      "runs": [
+        {
+          "secs": 84.85430979200011,
+          "ok": true,
+          "turns": 3,
+          "output": 466
+        }
+      ]
+    },
+    {
+      "label": "mlx-vlm + DFlash",
+      "thinking": "off",
+      "runs": [
+        {
+          "secs": 82.66614825000009,
+          "ok": true,
+          "turns": 3,
+          "output": 489
+        }
+      ]
+    },
+    {
+      "label": "mlx-vlm + DFlash",
+      "thinking": "low",
+      "runs": [
+        {
+          "secs": 82.99838454200001,
+          "ok": true,
+          "turns": 3,
+          "output": 457
+        }
+      ]
+    }
+  ]
+}
