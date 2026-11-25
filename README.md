@@ -12,7 +12,7 @@ npm install -g github:tctsung/pi-mlx-vlm && pi install "$(npm root -g)/pi-mlx-vl
 
 From a copy of the repo instead: `cd pi-mlx-vlm && npm install -g . && pi install "$(npm root -g)/pi-mlx-vlm"`. That links the folder, so keep it where it is.
 
-This adds the `mlx` provider to Pi and the `pi-mlx` command for models. Update both later with `npm update -g pi-mlx-vlm`.
+This adds the `mlx` provider to Pi and the `pi-mlx` command for models. Update both later by running the same `npm install -g github:tctsung/pi-mlx-vlm` again. The repo must be public, or your machine needs a GitHub SSH key.
 
 ## Get a model
 
