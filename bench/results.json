@@ -1,611 +1,154 @@
-{
-  "date": "2026-11-25T05:25:53.809Z",
-  "machine": "Apple M3 Pro",
-  "ollama": "qwen3.5:9b-mlx",
-  "mlx": "mlx-community/Qwen3.5-9B-4bit",
-  "task": "Create fib.py with fib(n) returning the nth Fibonacci number (fib(0)=0) and test_fib.py with 3 unittest cases. Run python3 -m unittest and report the result.",
-  "decode": [
-    {
-      "label": "Ollama (MLX)",
-      "runs": [
-        {
-          "tps": 21.185375151761644,
-          "ttft": 0.2687786250000008,
-          "tokens": 512
-        },
-        {
-          "tps": 21.055268746478436,
-          "ttft": 0.18036195799999769,
-          "tokens": 512
-        },
-        {
-          "tps": 21.01552323859084,
-          "ttft": 0.17570045899999967,
-          "tokens": 512
-        },
-        {
-          "tps": 21.129181317569497,
-          "ttft": 0.16499645799999416,
-          "tokens": 512
-        },
-        {
-          "tps": 21.222859099605454,
-          "ttft": 0.11844354199999362,
-          "tokens": 512
-        },
-        {
-          "tps": 21.304093980257488,
-          "ttft": 0.11539933300000849,
-          "tokens": 512
-        },
-        {
-          "tps": 21.26075246157714,
-          "ttft": 0.0901549159999995,
-          "tokens": 512
-        },
-        {
-          "tps": 21.084271087404037,
-          "ttft": 0.08342008300000453,
-          "tokens": 512
-        },
-        {
-          "tps": 21.185640151298838,
-          "ttft": 0.08460016699999687,
-          "tokens": 512
-        }
-      ],
-      "thinking": "off"
-    },
-    {
-      "label": "mlx-vlm + MTP",
-      "runs": [
-        {
-          "tps": 40.1345816196164,
-          "ttft": 0.4109983750000247,
-          "tokens": 512
-        },
-        {
-          "tps": 41.85935486132931,
-          "ttft": 0.42466649999999206,
-          "tokens": 512
-        },
-        {
-          "tps": 43.87877682045138,
-          "ttft": 0.4459234999999753,
-          "tokens": 512
-        },
-        {
-          "tps": 40.13011108697987,
-          "ttft": 0.47662795900000493,
-          "tokens": 512
-        },
-        {
-          "tps": 42.14343040143169,
-          "ttft": 0.43343774999998275,
-          "tokens": 512
-        },
-        {
-          "tps": 44.22038647490532,
-          "ttft": 0.4830882499999716,
-          "tokens": 512
-        },
-        {
-          "tps": 39.297974749839916,
-          "ttft": 0.48638591599999925,
-          "tokens": 512
-        },
-        {
-          "tps": 41.985834524672065,
-          "ttft": 0.3426433749999851,
-          "tokens": 512
-        },
-        {
-          "tps": 44.18890545216185,
-          "ttft": 0.49982250000000933,
-          "tokens": 512
-        }
-      ],
-      "thinking": "off"
-    },
-    {
-      "label": "mlx-vlm",
-      "runs": [
-        {
-          "tps": 25.311944431657903,
-          "ttft": 0.4394596250000177,
-          "tokens": 512
-        },
-        {
-          "tps": 25.13636616995589,
-          "ttft": 0.5041817079999018,
-          "tokens": 512
-        },
-        {
-          "tps": 25.24312490546847,
-          "ttft": 0.5687387090000556,
-          "tokens": 512
-        },
-        {
-          "tps": 25.020183028840513,
-          "ttft": 0.6141760830000276,
-          "tokens": 512
-        },
-        {
-          "tps": 24.97670973749956,
-          "ttft": 0.4797897909999592,
-          "tokens": 512
-        },
-        {
-          "tps": 25.068511246590965,
-          "ttft": 0.548061333999969,
-          "tokens": 512
-        },
-        {
-          "tps": 25.21270837972846,
-          "ttft": 0.5773664170000702,
-          "tokens": 512
-        },
-        {
-          "tps": 25.501331453559732,
-          "ttft": 0.4658656670000637,
-          "tokens": 512
-        },
-        {
-          "tps": 26.117637968610822,
-          "ttft": 0.4999444170000497,
-          "tokens": 512
-        }
-      ],
-      "thinking": "off"
-    },
-    {
-      "label": "mlx-vlm + DFlash",
-      "runs": [
-        {
-          "tps": 45.32599412944079,
-          "ttft": 0.5074937080000527,
-          "tokens": 512
-        },
-        {
-          "tps": 46.06174087352448,
-          "ttft": 0.3995846249999013,
-          "tokens": 512
-        },
-        {
-          "tps": 53.34631508568446,
-          "ttft": 0.4743273340000305,
-          "tokens": 512
-        },
-        {
-          "tps": 45.52064611758502,
-          "ttft": 0.47689366600010547,
-          "tokens": 512
-        },
-        {
-          "tps": 46.03755766026753,
-          "ttft": 0.4598168750000186,
-          "tokens": 512
-        },
-        {
-          "tps": 53.526487486750504,
-          "ttft": 0.3942424170000013,
-          "tokens": 512
-        },
-        {
-          "tps": 45.43371796250485,
-          "ttft": 0.39548837499995715,
-          "tokens": 512
-        },
-        {
-          "tps": 46.08942936107309,
-          "ttft": 0.4719253340000287,
-          "tokens": 512
-        },
-        {
-          "tps": 53.41731036289691,
-          "ttft": 0.4855564999999478,
-          "tokens": 512
-        }
-      ],
-      "thinking": "off"
-    },
-    {
-      "label": "Ollama (MLX)",
-      "thinking": "medium",
-      "runs": [
-        {
-          "tps": 21.143391585377014,
-          "ttft": 0.42552570900000003,
-          "tokens": 512
-        },
-        {
-          "tps": 21.104689450638222,
-          "ttft": 0.17864566600000034,
-          "tokens": 512
-        },
-        {
-          "tps": 21.2577636709032,
-          "ttft": 0.17989091700000426,
-          "tokens": 512
-        },
-        {
-          "tps": 21.26451328665748,
-          "ttft": 0.12202183399999922,
-          "tokens": 512
-        },
-        {
-          "tps": 21.13573379068825,
-          "ttft": 0.12070149999999558,
-          "tokens": 512
-        },
-        {
-          "tps": 21.25469129012375,
-          "ttft": 0.12358537499999511,
-          "tokens": 512
-        },
-        {
-          "tps": 21.108463017936643,
-          "ttft": 0.08635008299999754,
-          "tokens": 512
-        },
-        {
-          "tps": 21.256354953527886,
-          "ttft": 0.08793162499999743,
-          "tokens": 512
-        },
-        {
-          "tps": 21.324854359799698,
-          "ttft": 0.0867683749999851,
-          "tokens": 512
-        }
-      ]
-    },
-    {
-      "label": "mlx-vlm + MTP",
-      "thinking": "medium",
-      "runs": [
-        {
-          "tps": 40.5597189624216,
-          "ttft": 0.4175986249999842,
-          "tokens": 512
-        },
-        {
-          "tps": 40.71266064976978,
-          "ttft": 0.3741827080000075,
-          "tokens": 512
-        },
-        {
-          "tps": 42.67317934408093,
-          "ttft": 0.3649179170000134,
-          "tokens": 512
-        },
-        {
-          "tps": 40.6322537717227,
-          "ttft": 0.43532770900000467,
-          "tokens": 512
-        },
-        {
-          "tps": 40.87680479424511,
-          "ttft": 0.3601460000000079,
-          "tokens": 512
-        },
-        {
-          "tps": 43.07501321889339,
-          "ttft": 0.37889095799997446,
-          "tokens": 512
-        },
-        {
-          "tps": 40.84909561671107,
-          "ttft": 0.4270910419999855,
-          "tokens": 512
-        },
-        {
-          "tps": 40.61164098274584,
-          "ttft": 0.39058612500003076,
-          "tokens": 512
-        },
-        {
-          "tps": 43.054030643623484,
-          "ttft": 0.38064824999996927,
-          "tokens": 512
-        }
-      ]
-    },
-    {
-      "label": "mlx-vlm",
-      "thinking": "medium",
-      "runs": [
-        {
-          "tps": 26.79934685901003,
-          "ttft": 0.49633050000004003,
-          "tokens": 512
-        },
-        {
-          "tps": 26.69969283447582,
-          "ttft": 0.36379691700002875,
-          "tokens": 512
-        },
-        {
-          "tps": 26.814525539962066,
-          "ttft": 0.4599593750000349,
-          "tokens": 512
-        },
-        {
-          "tps": 26.858392548759323,
-          "ttft": 0.4594075840000296,
-          "tokens": 512
-        },
-        {
-          "tps": 26.83878080925286,
-          "ttft": 0.3450576670000446,
-          "tokens": 512
-        },
-        {
-          "tps": 26.669325307177083,
-          "ttft": 0.39478704200003994,
-          "tokens": 512
-        },
-        {
-          "tps": 26.784332236260354,
-          "ttft": 0.4399199170000502,
-          "tokens": 512
-        },
-        {
-          "tps": 26.855880446817455,
-          "ttft": 0.3647175409999909,
-          "tokens": 512
-        },
-        {
-          "tps": 26.84916450599648,
-          "ttft": 0.36478274999995486,
-          "tokens": 512
-        }
-      ]
-    },
-    {
-      "label": "mlx-vlm + DFlash",
-      "thinking": "medium",
-      "runs": [
-        {
-          "tps": 49.86468349648519,
-          "ttft": 0.40839708299998895,
-          "tokens": 512
-        },
-        {
-          "tps": 44.45047878009529,
-          "ttft": 0.3233265830000164,
-          "tokens": 512
-        },
-        {
-          "tps": 53.43947186324215,
-          "ttft": 0.3522298749999609,
-          "tokens": 512
-        },
-        {
-          "tps": 49.98101361161487,
-          "ttft": 0.43227304100000763,
-          "tokens": 512
-        },
-        {
-          "tps": 44.374695732274525,
-          "ttft": 0.3451464579999447,
-          "tokens": 512
-        },
-        {
-          "tps": 53.272810599875896,
-          "ttft": 0.3438837920000078,
-          "tokens": 512
-        },
-        {
-          "tps": 49.75064114108794,
-          "ttft": 0.4085352919999277,
-          "tokens": 512
-        },
-        {
-          "tps": 44.478812281666116,
-          "ttft": 0.3616535000000149,
-          "tokens": 512
-        },
-        {
-          "tps": 53.38027106183049,
-          "ttft": 0.3626399589999346,
-          "tokens": 512
-        }
-      ]
-    }
-  ],
-  "tasks": [
-    {
-      "label": "Ollama (MLX)",
-      "thinking": "off",
-      "runs": [
-        {
-          "secs": 34.068825542000006,
-          "ok": true,
-          "turns": 4,
-          "output": 384
-        },
-        {
-          "secs": 35.77647987500002,
-          "ok": true,
-          "turns": 4,
-          "output": 422
-        },
-        {
-          "secs": 40.432139417,
-          "ok": true,
-          "turns": 4,
-          "output": 496
-        }
-      ]
-    },
-    {
-      "label": "Ollama (MLX)",
-      "thinking": "medium",
-      "runs": [
-        {
-          "secs": 34.72127291699999,
-          "ok": true,
-          "turns": 4,
-          "output": 679
-        },
-        {
-          "secs": 35.775412416999984,
-          "ok": true,
-          "turns": 4,
-          "output": 695
-        },
-        {
-          "secs": 31.895899999999966,
-          "ok": true,
-          "turns": 3,
-          "output": 616
-        }
-      ]
-    },
-    {
-      "label": "mlx-vlm + MTP",
-      "thinking": "off",
-      "runs": [
-        {
-          "secs": 26.22443408399995,
-          "ok": true,
-          "turns": 4,
-          "output": 345
-        },
-        {
-          "secs": 26.180833084000042,
-          "ok": true,
-          "turns": 4,
-          "output": 345
-        },
-        {
-          "secs": 26.807164374999935,
-          "ok": true,
-          "turns": 4,
-          "output": 363
-        }
-      ]
-    },
-    {
-      "label": "mlx-vlm + MTP",
-      "thinking": "medium",
-      "runs": [
-        {
-          "secs": 48.044916959000055,
-          "ok": true,
-          "turns": 4,
-          "output": 1154
-        },
-        {
-          "secs": 33.453962500000024,
-          "ok": true,
-          "turns": 4,
-          "output": 626
-        },
-        {
-          "secs": 39.39141433400009,
-          "ok": true,
-          "turns": 4,
-          "output": 829
-        }
-      ]
-    },
-    {
-      "label": "mlx-vlm",
-      "thinking": "off",
-      "runs": [
-        {
-          "secs": 33.27752154099999,
-          "ok": true,
-          "turns": 4,
-          "output": 388
-        },
-        {
-          "secs": 33.21078700000001,
-          "ok": true,
-          "turns": 4,
-          "output": 388
-        },
-        {
-          "secs": 33.997637292,
-          "ok": true,
-          "turns": 4,
-          "output": 396
-        }
-      ]
-    },
-    {
-      "label": "mlx-vlm",
-      "thinking": "medium",
-      "runs": [
-        {
-          "secs": 45.48065912499989,
-          "ok": true,
-          "turns": 4,
-          "output": 670
-        },
-        {
-          "secs": 45.51185483300011,
-          "ok": true,
-          "turns": 4,
-          "output": 660
-        },
-        {
-          "secs": 41.99314520799997,
-          "ok": true,
-          "turns": 4,
-          "output": 580
-        }
-      ]
-    },
-    {
-      "label": "mlx-vlm + DFlash",
-      "thinking": "off",
-      "runs": [
-        {
-          "secs": 26.79496337500005,
-          "ok": true,
-          "turns": 4,
-          "output": 377
-        },
-        {
-          "secs": 27.396311083000153,
-          "ok": true,
-          "turns": 4,
-          "output": 405
-        },
-        {
-          "secs": 26.985086083999835,
-          "ok": true,
-          "turns": 4,
-          "output": 402
-        }
-      ]
-    },
-    {
-      "label": "mlx-vlm + DFlash",
-      "thinking": "medium",
-      "runs": [
-        {
-          "secs": 37.10656554200011,
-          "ok": true,
-          "turns": 4,
-          "output": 804
-        },
-        {
-          "secs": 36.938701792000096,
-          "ok": true,
-          "turns": 4,
-          "output": 804
-        },
-        {
-          "secs": 45.33495562499994,
-          "ok": true,
-          "turns": 4,
-          "output": 1154
-        }
-      ]
-    }
-  ]
-}
+[
+{"date":"2026-11-25T05:25:53.809Z","machine":"Apple M3 Pro 36 GB","model":"qwen3.5-9b","config":"ollama","ollama":"qwen3.5:9b-mlx","thinking":"off","kind":"decode","tps":21.185375151761644,"ttft":0.2687786250000008,"tokens":512},
+{"date":"2026-11-25T05:25:53.809Z","machine":"Apple M3 Pro 36 GB","model":"qwen3.5-9b","config":"ollama","ollama":"qwen3.5:9b-mlx","thinking":"off","kind":"decode","tps":21.055268746478436,"ttft":0.18036195799999769,"tokens":512},
+{"date":"2026-11-25T05:25:53.809Z","machine":"Apple M3 Pro 36 GB","model":"qwen3.5-9b","config":"ollama","ollama":"qwen3.5:9b-mlx","thinking":"off","kind":"decode","tps":21.01552323859084,"ttft":0.17570045899999967,"tokens":512},
+{"date":"2026-11-25T05:25:53.809Z","machine":"Apple M3 Pro 36 GB","model":"qwen3.5-9b","config":"ollama","ollama":"qwen3.5:9b-mlx","thinking":"off","kind":"decode","tps":21.129181317569497,"ttft":0.16499645799999416,"tokens":512},
+{"date":"2026-11-25T05:25:53.809Z","machine":"Apple M3 Pro 36 GB","model":"qwen3.5-9b","config":"ollama","ollama":"qwen3.5:9b-mlx","thinking":"off","kind":"decode","tps":21.222859099605454,"ttft":0.11844354199999362,"tokens":512},
+{"date":"2026-11-25T05:25:53.809Z","machine":"Apple M3 Pro 36 GB","model":"qwen3.5-9b","config":"ollama","ollama":"qwen3.5:9b-mlx","thinking":"off","kind":"decode","tps":21.304093980257488,"ttft":0.11539933300000849,"tokens":512},
+{"date":"2026-11-25T05:25:53.809Z","machine":"Apple M3 Pro 36 GB","model":"qwen3.5-9b","config":"ollama","ollama":"qwen3.5:9b-mlx","thinking":"off","kind":"decode","tps":21.26075246157714,"ttft":0.0901549159999995,"tokens":512},
+{"date":"2026-11-25T05:25:53.809Z","machine":"Apple M3 Pro 36 GB","model":"qwen3.5-9b","config":"ollama","ollama":"qwen3.5:9b-mlx","thinking":"off","kind":"decode","tps":21.084271087404037,"ttft":0.08342008300000453,"tokens":512},
+{"date":"2026-11-25T05:25:53.809Z","machine":"Apple M3 Pro 36 GB","model":"qwen3.5-9b","config":"ollama","ollama":"qwen3.5:9b-mlx","thinking":"off","kind":"decode","tps":21.185640151298838,"ttft":0.08460016699999687,"tokens":512},
+{"date":"2026-11-25T05:25:53.809Z","machine":"Apple M3 Pro 36 GB","model":"qwen3.5-9b","config":"mtp","thinking":"off","kind":"decode","tps":40.1345816196164,"ttft":0.4109983750000247,"tokens":512},
+{"date":"2026-11-25T05:25:53.809Z","machine":"Apple M3 Pro 36 GB","model":"qwen3.5-9b","config":"mtp","thinking":"off","kind":"decode","tps":41.85935486132931,"ttft":0.42466649999999206,"tokens":512},
+{"date":"2026-11-25T05:25:53.809Z","machine":"Apple M3 Pro 36 GB","model":"qwen3.5-9b","config":"mtp","thinking":"off","kind":"decode","tps":43.87877682045138,"ttft":0.4459234999999753,"tokens":512},
+{"date":"2026-11-25T05:25:53.809Z","machine":"Apple M3 Pro 36 GB","model":"qwen3.5-9b","config":"mtp","thinking":"off","kind":"decode","tps":40.13011108697987,"ttft":0.47662795900000493,"tokens":512},
+{"date":"2026-11-25T05:25:53.809Z","machine":"Apple M3 Pro 36 GB","model":"qwen3.5-9b","config":"mtp","thinking":"off","kind":"decode","tps":42.14343040143169,"ttft":0.43343774999998275,"tokens":512},
+{"date":"2026-11-25T05:25:53.809Z","machine":"Apple M3 Pro 36 GB","model":"qwen3.5-9b","config":"mtp","thinking":"off","kind":"decode","tps":44.22038647490532,"ttft":0.4830882499999716,"tokens":512},
+{"date":"2026-11-25T05:25:53.809Z","machine":"Apple M3 Pro 36 GB","model":"qwen3.5-9b","config":"mtp","thinking":"off","kind":"decode","tps":39.297974749839916,"ttft":0.48638591599999925,"tokens":512},
+{"date":"2026-11-25T05:25:53.809Z","machine":"Apple M3 Pro 36 GB","model":"qwen3.5-9b","config":"mtp","thinking":"off","kind":"decode","tps":41.985834524672065,"ttft":0.3426433749999851,"tokens":512},
+{"date":"2026-11-25T05:25:53.809Z","machine":"Apple M3 Pro 36 GB","model":"qwen3.5-9b","config":"mtp","thinking":"off","kind":"decode","tps":44.18890545216185,"ttft":0.49982250000000933,"tokens":512},
+{"date":"2026-11-25T05:25:53.809Z","machine":"Apple M3 Pro 36 GB","model":"qwen3.5-9b","config":"none","thinking":"off","kind":"decode","tps":25.311944431657903,"ttft":0.4394596250000177,"tokens":512},
+{"date":"2026-11-25T05:25:53.809Z","machine":"Apple M3 Pro 36 GB","model":"qwen3.5-9b","config":"none","thinking":"off","kind":"decode","tps":25.13636616995589,"ttft":0.5041817079999018,"tokens":512},
+{"date":"2026-11-25T05:25:53.809Z","machine":"Apple M3 Pro 36 GB","model":"qwen3.5-9b","config":"none","thinking":"off","kind":"decode","tps":25.24312490546847,"ttft":0.5687387090000556,"tokens":512},
+{"date":"2026-11-25T05:25:53.809Z","machine":"Apple M3 Pro 36 GB","model":"qwen3.5-9b","config":"none","thinking":"off","kind":"decode","tps":25.020183028840513,"ttft":0.6141760830000276,"tokens":512},
+{"date":"2026-11-25T05:25:53.809Z","machine":"Apple M3 Pro 36 GB","model":"qwen3.5-9b","config":"none","thinking":"off","kind":"decode","tps":24.97670973749956,"ttft":0.4797897909999592,"tokens":512},
+{"date":"2026-11-25T05:25:53.809Z","machine":"Apple M3 Pro 36 GB","model":"qwen3.5-9b","config":"none","thinking":"off","kind":"decode","tps":25.068511246590965,"ttft":0.548061333999969,"tokens":512},
+{"date":"2026-11-25T05:25:53.809Z","machine":"Apple M3 Pro 36 GB","model":"qwen3.5-9b","config":"none","thinking":"off","kind":"decode","tps":25.21270837972846,"ttft":0.5773664170000702,"tokens":512},
+{"date":"2026-11-25T05:25:53.809Z","machine":"Apple M3 Pro 36 GB","model":"qwen3.5-9b","config":"none","thinking":"off","kind":"decode","tps":25.501331453559732,"ttft":0.4658656670000637,"tokens":512},
+{"date":"2026-11-25T05:25:53.809Z","machine":"Apple M3 Pro 36 GB","model":"qwen3.5-9b","config":"none","thinking":"off","kind":"decode","tps":26.117637968610822,"ttft":0.4999444170000497,"tokens":512},
+{"date":"2026-11-25T05:25:53.809Z","machine":"Apple M3 Pro 36 GB","model":"qwen3.5-9b","config":"dflash","thinking":"off","kind":"decode","tps":45.32599412944079,"ttft":0.5074937080000527,"tokens":512},
+{"date":"2026-11-25T05:25:53.809Z","machine":"Apple M3 Pro 36 GB","model":"qwen3.5-9b","config":"dflash","thinking":"off","kind":"decode","tps":46.06174087352448,"ttft":0.3995846249999013,"tokens":512},
+{"date":"2026-11-25T05:25:53.809Z","machine":"Apple M3 Pro 36 GB","model":"qwen3.5-9b","config":"dflash","thinking":"off","kind":"decode","tps":53.34631508568446,"ttft":0.4743273340000305,"tokens":512},
+{"date":"2026-11-25T05:25:53.809Z","machine":"Apple M3 Pro 36 GB","model":"qwen3.5-9b","config":"dflash","thinking":"off","kind":"decode","tps":45.52064611758502,"ttft":0.47689366600010547,"tokens":512},
+{"date":"2026-11-25T05:25:53.809Z","machine":"Apple M3 Pro 36 GB","model":"qwen3.5-9b","config":"dflash","thinking":"off","kind":"decode","tps":46.03755766026753,"ttft":0.4598168750000186,"tokens":512},
+{"date":"2026-11-25T05:25:53.809Z","machine":"Apple M3 Pro 36 GB","model":"qwen3.5-9b","config":"dflash","thinking":"off","kind":"decode","tps":53.526487486750504,"ttft":0.3942424170000013,"tokens":512},
+{"date":"2026-11-25T05:25:53.809Z","machine":"Apple M3 Pro 36 GB","model":"qwen3.5-9b","config":"dflash","thinking":"off","kind":"decode","tps":45.43371796250485,"ttft":0.39548837499995715,"tokens":512},
+{"date":"2026-11-25T05:25:53.809Z","machine":"Apple M3 Pro 36 GB","model":"qwen3.5-9b","config":"dflash","thinking":"off","kind":"decode","tps":46.08942936107309,"ttft":0.4719253340000287,"tokens":512},
+{"date":"2026-11-25T05:25:53.809Z","machine":"Apple M3 Pro 36 GB","model":"qwen3.5-9b","config":"dflash","thinking":"off","kind":"decode","tps":53.41731036289691,"ttft":0.4855564999999478,"tokens":512},
+{"date":"2026-11-25T05:25:53.809Z","machine":"Apple M3 Pro 36 GB","model":"qwen3.5-9b","config":"ollama","ollama":"qwen3.5:9b-mlx","thinking":"medium","kind":"decode","tps":21.143391585377014,"ttft":0.42552570900000003,"tokens":512},
+{"date":"2026-11-25T05:25:53.809Z","machine":"Apple M3 Pro 36 GB","model":"qwen3.5-9b","config":"ollama","ollama":"qwen3.5:9b-mlx","thinking":"medium","kind":"decode","tps":21.104689450638222,"ttft":0.17864566600000034,"tokens":512},
+{"date":"2026-11-25T05:25:53.809Z","machine":"Apple M3 Pro 36 GB","model":"qwen3.5-9b","config":"ollama","ollama":"qwen3.5:9b-mlx","thinking":"medium","kind":"decode","tps":21.2577636709032,"ttft":0.17989091700000426,"tokens":512},
+{"date":"2026-11-25T05:25:53.809Z","machine":"Apple M3 Pro 36 GB","model":"qwen3.5-9b","config":"ollama","ollama":"qwen3.5:9b-mlx","thinking":"medium","kind":"decode","tps":21.26451328665748,"ttft":0.12202183399999922,"tokens":512},
+{"date":"2026-11-25T05:25:53.809Z","machine":"Apple M3 Pro 36 GB","model":"qwen3.5-9b","config":"ollama","ollama":"qwen3.5:9b-mlx","thinking":"medium","kind":"decode","tps":21.13573379068825,"ttft":0.12070149999999558,"tokens":512},
+{"date":"2026-11-25T05:25:53.809Z","machine":"Apple M3 Pro 36 GB","model":"qwen3.5-9b","config":"ollama","ollama":"qwen3.5:9b-mlx","thinking":"medium","kind":"decode","tps":21.25469129012375,"ttft":0.12358537499999511,"tokens":512},
+{"date":"2026-11-25T05:25:53.809Z","machine":"Apple M3 Pro 36 GB","model":"qwen3.5-9b","config":"ollama","ollama":"qwen3.5:9b-mlx","thinking":"medium","kind":"decode","tps":21.108463017936643,"ttft":0.08635008299999754,"tokens":512},
+{"date":"2026-11-25T05:25:53.809Z","machine":"Apple M3 Pro 36 GB","model":"qwen3.5-9b","config":"ollama","ollama":"qwen3.5:9b-mlx","thinking":"medium","kind":"decode","tps":21.256354953527886,"ttft":0.08793162499999743,"tokens":512},
+{"date":"2026-11-25T05:25:53.809Z","machine":"Apple M3 Pro 36 GB","model":"qwen3.5-9b","config":"ollama","ollama":"qwen3.5:9b-mlx","thinking":"medium","kind":"decode","tps":21.324854359799698,"ttft":0.0867683749999851,"tokens":512},
+{"date":"2026-11-25T05:25:53.809Z","machine":"Apple M3 Pro 36 GB","model":"qwen3.5-9b","config":"mtp","thinking":"medium","kind":"decode","tps":40.5597189624216,"ttft":0.4175986249999842,"tokens":512},
+{"date":"2026-11-25T05:25:53.809Z","machine":"Apple M3 Pro 36 GB","model":"qwen3.5-9b","config":"mtp","thinking":"medium","kind":"decode","tps":40.71266064976978,"ttft":0.3741827080000075,"tokens":512},
+{"date":"2026-11-25T05:25:53.809Z","machine":"Apple M3 Pro 36 GB","model":"qwen3.5-9b","config":"mtp","thinking":"medium","kind":"decode","tps":42.67317934408093,"ttft":0.3649179170000134,"tokens":512},
+{"date":"2026-11-25T05:25:53.809Z","machine":"Apple M3 Pro 36 GB","model":"qwen3.5-9b","config":"mtp","thinking":"medium","kind":"decode","tps":40.6322537717227,"ttft":0.43532770900000467,"tokens":512},
+{"date":"2026-11-25T05:25:53.809Z","machine":"Apple M3 Pro 36 GB","model":"qwen3.5-9b","config":"mtp","thinking":"medium","kind":"decode","tps":40.87680479424511,"ttft":0.3601460000000079,"tokens":512},
+{"date":"2026-11-25T05:25:53.809Z","machine":"Apple M3 Pro 36 GB","model":"qwen3.5-9b","config":"mtp","thinking":"medium","kind":"decode","tps":43.07501321889339,"ttft":0.37889095799997446,"tokens":512},
+{"date":"2026-11-25T05:25:53.809Z","machine":"Apple M3 Pro 36 GB","model":"qwen3.5-9b","config":"mtp","thinking":"medium","kind":"decode","tps":40.84909561671107,"ttft":0.4270910419999855,"tokens":512},
+{"date":"2026-11-25T05:25:53.809Z","machine":"Apple M3 Pro 36 GB","model":"qwen3.5-9b","config":"mtp","thinking":"medium","kind":"decode","tps":40.61164098274584,"ttft":0.39058612500003076,"tokens":512},
+{"date":"2026-11-25T05:25:53.809Z","machine":"Apple M3 Pro 36 GB","model":"qwen3.5-9b","config":"mtp","thinking":"medium","kind":"decode","tps":43.054030643623484,"ttft":0.38064824999996927,"tokens":512},
+{"date":"2026-11-25T05:25:53.809Z","machine":"Apple M3 Pro 36 GB","model":"qwen3.5-9b","config":"none","thinking":"medium","kind":"decode","tps":26.79934685901003,"ttft":0.49633050000004003,"tokens":512},
+{"date":"2026-11-25T05:25:53.809Z","machine":"Apple M3 Pro 36 GB","model":"qwen3.5-9b","config":"none","thinking":"medium","kind":"decode","tps":26.69969283447582,"ttft":0.36379691700002875,"tokens":512},
+{"date":"2026-11-25T05:25:53.809Z","machine":"Apple M3 Pro 36 GB","model":"qwen3.5-9b","config":"none","thinking":"medium","kind":"decode","tps":26.814525539962066,"ttft":0.4599593750000349,"tokens":512},
+{"date":"2026-11-25T05:25:53.809Z","machine":"Apple M3 Pro 36 GB","model":"qwen3.5-9b","config":"none","thinking":"medium","kind":"decode","tps":26.858392548759323,"ttft":0.4594075840000296,"tokens":512},
+{"date":"2026-11-25T05:25:53.809Z","machine":"Apple M3 Pro 36 GB","model":"qwen3.5-9b","config":"none","thinking":"medium","kind":"decode","tps":26.83878080925286,"ttft":0.3450576670000446,"tokens":512},
+{"date":"2026-11-25T05:25:53.809Z","machine":"Apple M3 Pro 36 GB","model":"qwen3.5-9b","config":"none","thinking":"medium","kind":"decode","tps":26.669325307177083,"ttft":0.39478704200003994,"tokens":512},
+{"date":"2026-11-25T05:25:53.809Z","machine":"Apple M3 Pro 36 GB","model":"qwen3.5-9b","config":"none","thinking":"medium","kind":"decode","tps":26.784332236260354,"ttft":0.4399199170000502,"tokens":512},
+{"date":"2026-11-25T05:25:53.809Z","machine":"Apple M3 Pro 36 GB","model":"qwen3.5-9b","config":"none","thinking":"medium","kind":"decode","tps":26.855880446817455,"ttft":0.3647175409999909,"tokens":512},
+{"date":"2026-11-25T05:25:53.809Z","machine":"Apple M3 Pro 36 GB","model":"qwen3.5-9b","config":"none","thinking":"medium","kind":"decode","tps":26.84916450599648,"ttft":0.36478274999995486,"tokens":512},
+{"date":"2026-11-25T05:25:53.809Z","machine":"Apple M3 Pro 36 GB","model":"qwen3.5-9b","config":"dflash","thinking":"medium","kind":"decode","tps":49.86468349648519,"ttft":0.40839708299998895,"tokens":512},
+{"date":"2026-11-25T05:25:53.809Z","machine":"Apple M3 Pro 36 GB","model":"qwen3.5-9b","config":"dflash","thinking":"medium","kind":"decode","tps":44.45047878009529,"ttft":0.3233265830000164,"tokens":512},
+{"date":"2026-11-25T05:25:53.809Z","machine":"Apple M3 Pro 36 GB","model":"qwen3.5-9b","config":"dflash","thinking":"medium","kind":"decode","tps":53.43947186324215,"ttft":0.3522298749999609,"tokens":512},
+{"date":"2026-11-25T05:25:53.809Z","machine":"Apple M3 Pro 36 GB","model":"qwen3.5-9b","config":"dflash","thinking":"medium","kind":"decode","tps":49.98101361161487,"ttft":0.43227304100000763,"tokens":512},
+{"date":"2026-11-25T05:25:53.809Z","machine":"Apple M3 Pro 36 GB","model":"qwen3.5-9b","config":"dflash","thinking":"medium","kind":"decode","tps":44.374695732274525,"ttft":0.3451464579999447,"tokens":512},
+{"date":"2026-11-25T05:25:53.809Z","machine":"Apple M3 Pro 36 GB","model":"qwen3.5-9b","config":"dflash","thinking":"medium","kind":"decode","tps":53.272810599875896,"ttft":0.3438837920000078,"tokens":512},
+{"date":"2026-11-25T05:25:53.809Z","machine":"Apple M3 Pro 36 GB","model":"qwen3.5-9b","config":"dflash","thinking":"medium","kind":"decode","tps":49.75064114108794,"ttft":0.4085352919999277,"tokens":512},
+{"date":"2026-11-25T05:25:53.809Z","machine":"Apple M3 Pro 36 GB","model":"qwen3.5-9b","config":"dflash","thinking":"medium","kind":"decode","tps":44.478812281666116,"ttft":0.3616535000000149,"tokens":512},
+{"date":"2026-11-25T05:25:53.809Z","machine":"Apple M3 Pro 36 GB","model":"qwen3.5-9b","config":"dflash","thinking":"medium","kind":"decode","tps":53.38027106183049,"ttft":0.3626399589999346,"tokens":512},
+{"date":"2026-11-25T05:25:53.809Z","machine":"Apple M3 Pro 36 GB","model":"qwen3.5-9b","config":"ollama","ollama":"qwen3.5:9b-mlx","thinking":"off","kind":"task","secs":34.068825542000006,"ok":true,"turns":4,"output":384},
+{"date":"2026-11-25T05:25:53.809Z","machine":"Apple M3 Pro 36 GB","model":"qwen3.5-9b","config":"ollama","ollama":"qwen3.5:9b-mlx","thinking":"off","kind":"task","secs":35.77647987500002,"ok":true,"turns":4,"output":422},
+{"date":"2026-11-25T05:25:53.809Z","machine":"Apple M3 Pro 36 GB","model":"qwen3.5-9b","config":"ollama","ollama":"qwen3.5:9b-mlx","thinking":"off","kind":"task","secs":40.432139417,"ok":true,"turns":4,"output":496},
+{"date":"2026-11-25T05:25:53.809Z","machine":"Apple M3 Pro 36 GB","model":"qwen3.5-9b","config":"ollama","ollama":"qwen3.5:9b-mlx","thinking":"medium","kind":"task","secs":34.72127291699999,"ok":true,"turns":4,"output":679},
+{"date":"2026-11-25T05:25:53.809Z","machine":"Apple M3 Pro 36 GB","model":"qwen3.5-9b","config":"ollama","ollama":"qwen3.5:9b-mlx","thinking":"medium","kind":"task","secs":35.775412416999984,"ok":true,"turns":4,"output":695},
+{"date":"2026-11-25T05:25:53.809Z","machine":"Apple M3 Pro 36 GB","model":"qwen3.5-9b","config":"ollama","ollama":"qwen3.5:9b-mlx","thinking":"medium","kind":"task","secs":31.895899999999966,"ok":true,"turns":3,"output":616},
+{"date":"2026-11-25T05:25:53.809Z","machine":"Apple M3 Pro 36 GB","model":"qwen3.5-9b","config":"mtp","thinking":"off","kind":"task","secs":26.22443408399995,"ok":true,"turns":4,"output":345},
+{"date":"2026-11-25T05:25:53.809Z","machine":"Apple M3 Pro 36 GB","model":"qwen3.5-9b","config":"mtp","thinking":"off","kind":"task","secs":26.180833084000042,"ok":true,"turns":4,"output":345},
+{"date":"2026-11-25T05:25:53.809Z","machine":"Apple M3 Pro 36 GB","model":"qwen3.5-9b","config":"mtp","thinking":"off","kind":"task","secs":26.807164374999935,"ok":true,"turns":4,"output":363},
+{"date":"2026-11-25T05:25:53.809Z","machine":"Apple M3 Pro 36 GB","model":"qwen3.5-9b","config":"mtp","thinking":"medium","kind":"task","secs":48.044916959000055,"ok":true,"turns":4,"output":1154},
+{"date":"2026-11-25T05:25:53.809Z","machine":"Apple M3 Pro 36 GB","model":"qwen3.5-9b","config":"mtp","thinking":"medium","kind":"task","secs":33.453962500000024,"ok":true,"turns":4,"output":626},
+{"date":"2026-11-25T05:25:53.809Z","machine":"Apple M3 Pro 36 GB","model":"qwen3.5-9b","config":"mtp","thinking":"medium","kind":"task","secs":39.39141433400009,"ok":true,"turns":4,"output":829},
+{"date":"2026-11-25T05:25:53.809Z","machine":"Apple M3 Pro 36 GB","model":"qwen3.5-9b","config":"none","thinking":"off","kind":"task","secs":33.27752154099999,"ok":true,"turns":4,"output":388},
+{"date":"2026-11-25T05:25:53.809Z","machine":"Apple M3 Pro 36 GB","model":"qwen3.5-9b","config":"none","thinking":"off","kind":"task","secs":33.21078700000001,"ok":true,"turns":4,"output":388},
+{"date":"2026-11-25T05:25:53.809Z","machine":"Apple M3 Pro 36 GB","model":"qwen3.5-9b","config":"none","thinking":"off","kind":"task","secs":33.997637292,"ok":true,"turns":4,"output":396},
+{"date":"2026-11-25T05:25:53.809Z","machine":"Apple M3 Pro 36 GB","model":"qwen3.5-9b","config":"none","thinking":"medium","kind":"task","secs":45.48065912499989,"ok":true,"turns":4,"output":670},
+{"date":"2026-11-25T05:25:53.809Z","machine":"Apple M3 Pro 36 GB","model":"qwen3.5-9b","config":"none","thinking":"medium","kind":"task","secs":45.51185483300011,"ok":true,"turns":4,"output":660},
+{"date":"2026-11-25T05:25:53.809Z","machine":"Apple M3 Pro 36 GB","model":"qwen3.5-9b","config":"none","thinking":"medium","kind":"task","secs":41.99314520799997,"ok":true,"turns":4,"output":580},
+{"date":"2026-11-25T05:25:53.809Z","machine":"Apple M3 Pro 36 GB","model":"qwen3.5-9b","config":"dflash","thinking":"off","kind":"task","secs":26.79496337500005,"ok":true,"turns":4,"output":377},
+{"date":"2026-11-25T05:25:53.809Z","machine":"Apple M3 Pro 36 GB","model":"qwen3.5-9b","config":"dflash","thinking":"off","kind":"task","secs":27.396311083000153,"ok":true,"turns":4,"output":405},
+{"date":"2026-11-25T05:25:53.809Z","machine":"Apple M3 Pro 36 GB","model":"qwen3.5-9b","config":"dflash","thinking":"off","kind":"task","secs":26.985086083999835,"ok":true,"turns":4,"output":402},
+{"date":"2026-11-25T05:25:53.809Z","machine":"Apple M3 Pro 36 GB","model":"qwen3.5-9b","config":"dflash","thinking":"medium","kind":"task","secs":37.10656554200011,"ok":true,"turns":4,"output":804},
+{"date":"2026-11-25T05:25:53.809Z","machine":"Apple M3 Pro 36 GB","model":"qwen3.5-9b","config":"dflash","thinking":"medium","kind":"task","secs":36.938701792000096,"ok":true,"turns":4,"output":804},
+{"date":"2026-11-25T05:25:53.809Z","machine":"Apple M3 Pro 36 GB","model":"qwen3.5-9b","config":"dflash","thinking":"medium","kind":"task","secs":45.33495562499994,"ok":true,"turns":4,"output":1154},
+{"date":"2026-11-25T06:35:50.083Z","machine":"Apple M3 Pro 36 GB","model":"qwen3.8-27b","config":"ollama","ollama":"qwen3.8:27b-mlx","thinking":"off","kind":"decode","tps":23.862672235899936,"ttft":0.9175570420000003,"tokens":512},
+{"date":"2026-11-25T06:35:50.083Z","machine":"Apple M3 Pro 36 GB","model":"qwen3.8-27b","config":"ollama","ollama":"qwen3.8:27b-mlx","thinking":"off","kind":"decode","tps":20.821595790281386,"ttft":0.5803535420000008,"tokens":512},
+{"date":"2026-11-25T06:35:50.083Z","machine":"Apple M3 Pro 36 GB","model":"qwen3.8-27b","config":"ollama","ollama":"qwen3.8:27b-mlx","thinking":"off","kind":"decode","tps":25.83882061434237,"ttft":0.5550661659999969,"tokens":493},
+{"date":"2026-11-25T06:35:50.083Z","machine":"Apple M3 Pro 36 GB","model":"qwen3.8-27b","config":"ollama","ollama":"qwen3.8:27b-mlx","thinking":"low","kind":"decode","tps":22.214485513458207,"ttft":0.8328684590000048,"tokens":512},
+{"date":"2026-11-25T06:35:50.083Z","machine":"Apple M3 Pro 36 GB","model":"qwen3.8-27b","config":"ollama","ollama":"qwen3.8:27b-mlx","thinking":"low","kind":"decode","tps":22.74268650921445,"ttft":0.8341060829999914,"tokens":512},
+{"date":"2026-11-25T06:35:50.083Z","machine":"Apple M3 Pro 36 GB","model":"qwen3.8-27b","config":"ollama","ollama":"qwen3.8:27b-mlx","thinking":"low","kind":"decode","tps":20.420373672557687,"ttft":0.5627531670000026,"tokens":512},
+{"date":"2026-11-25T06:35:50.083Z","machine":"Apple M3 Pro 36 GB","model":"qwen3.8-27b","config":"none","thinking":"off","kind":"decode","tps":8.70606245435219,"ttft":1.1009699580000014,"tokens":512},
+{"date":"2026-11-25T06:35:50.083Z","machine":"Apple M3 Pro 36 GB","model":"qwen3.8-27b","config":"none","thinking":"off","kind":"decode","tps":8.677564727987484,"ttft":0.7651367500000051,"tokens":512},
+{"date":"2026-11-25T06:35:50.083Z","machine":"Apple M3 Pro 36 GB","model":"qwen3.8-27b","config":"none","thinking":"off","kind":"decode","tps":8.75460472505748,"ttft":1.0174452920000185,"tokens":445},
+{"date":"2026-11-25T06:35:50.083Z","machine":"Apple M3 Pro 36 GB","model":"qwen3.8-27b","config":"none","thinking":"low","kind":"decode","tps":8.710313033380618,"ttft":1.0412226670000237,"tokens":512},
+{"date":"2026-11-25T06:35:50.083Z","machine":"Apple M3 Pro 36 GB","model":"qwen3.8-27b","config":"none","thinking":"low","kind":"decode","tps":8.696530145051721,"ttft":1.4278339159999742,"tokens":512},
+{"date":"2026-11-25T06:35:50.083Z","machine":"Apple M3 Pro 36 GB","model":"qwen3.8-27b","config":"none","thinking":"low","kind":"decode","tps":8.486392510304265,"ttft":0.8398209999999963,"tokens":512},
+{"date":"2026-11-25T06:35:50.083Z","machine":"Apple M3 Pro 36 GB","model":"qwen3.8-27b","config":"mtp","thinking":"off","kind":"decode","tps":18.595188178242005,"ttft":0.9510060829999857,"tokens":512},
+{"date":"2026-11-25T06:35:50.083Z","machine":"Apple M3 Pro 36 GB","model":"qwen3.8-27b","config":"mtp","thinking":"off","kind":"decode","tps":16.540492765141128,"ttft":0.7053412089999765,"tokens":512},
+{"date":"2026-11-25T06:35:50.083Z","machine":"Apple M3 Pro 36 GB","model":"qwen3.8-27b","config":"mtp","thinking":"off","kind":"decode","tps":18.97335939292002,"ttft":0.9476752920000581,"tokens":445},
+{"date":"2026-11-25T06:35:50.083Z","machine":"Apple M3 Pro 36 GB","model":"qwen3.8-27b","config":"mtp","thinking":"low","kind":"decode","tps":16.52966286616369,"ttft":0.9703284589999821,"tokens":512},
+{"date":"2026-11-25T06:35:50.083Z","machine":"Apple M3 Pro 36 GB","model":"qwen3.8-27b","config":"mtp","thinking":"low","kind":"decode","tps":15.636279514515094,"ttft":1.363251333000022,"tokens":512},
+{"date":"2026-11-25T06:35:50.083Z","machine":"Apple M3 Pro 36 GB","model":"qwen3.8-27b","config":"mtp","thinking":"low","kind":"decode","tps":16.931343248690226,"ttft":0.7661826250000159,"tokens":512},
+{"date":"2026-11-25T06:35:50.083Z","machine":"Apple M3 Pro 36 GB","model":"qwen3.8-27b","config":"dflash2","thinking":"off","kind":"decode","tps":19.35430173550458,"ttft":0.9553688749999274,"tokens":512},
+{"date":"2026-11-25T06:35:50.083Z","machine":"Apple M3 Pro 36 GB","model":"qwen3.8-27b","config":"dflash2","thinking":"off","kind":"decode","tps":17.07294676693211,"ttft":0.6717788329999894,"tokens":512},
+{"date":"2026-11-25T06:35:50.083Z","machine":"Apple M3 Pro 36 GB","model":"qwen3.8-27b","config":"dflash2","thinking":"off","kind":"decode","tps":19.60469888086202,"ttft":0.9307720419999678,"tokens":445},
+{"date":"2026-11-25T06:35:50.083Z","machine":"Apple M3 Pro 36 GB","model":"qwen3.8-27b","config":"dflash2","thinking":"low","kind":"decode","tps":15.989725709436783,"ttft":0.9724132079998963,"tokens":512},
+{"date":"2026-11-25T06:35:50.083Z","machine":"Apple M3 Pro 36 GB","model":"qwen3.8-27b","config":"dflash2","thinking":"low","kind":"decode","tps":15.432546279819169,"ttft":1.3251175829998683,"tokens":512},
+{"date":"2026-11-25T06:35:50.083Z","machine":"Apple M3 Pro 36 GB","model":"qwen3.8-27b","config":"dflash2","thinking":"low","kind":"decode","tps":17.451441910929788,"ttft":0.7183395000000019,"tokens":512},
+{"date":"2026-11-25T06:35:50.083Z","machine":"Apple M3 Pro 36 GB","model":"qwen3.8-27b","config":"ollama","ollama":"qwen3.8:27b-mlx","thinking":"off","kind":"task","secs":68.408340708,"ok":true,"turns":3,"output":547},
+{"date":"2026-11-25T06:35:50.083Z","machine":"Apple M3 Pro 36 GB","model":"qwen3.8-27b","config":"ollama","ollama":"qwen3.8:27b-mlx","thinking":"low","kind":"task","secs":69.62944775000003,"ok":true,"turns":3,"output":566},
+{"date":"2026-11-25T06:35:50.083Z","machine":"Apple M3 Pro 36 GB","model":"qwen3.8-27b","config":"none","thinking":"off","kind":"task","secs":105.2333835,"ok":true,"turns":3,"output":407},
+{"date":"2026-11-25T06:35:50.083Z","machine":"Apple M3 Pro 36 GB","model":"qwen3.8-27b","config":"none","thinking":"low","kind":"task","secs":112.47586916600005,"ok":true,"turns":3,"output":466},
+{"date":"2026-11-25T06:35:50.083Z","machine":"Apple M3 Pro 36 GB","model":"qwen3.8-27b","config":"mtp","thinking":"off","kind":"task","secs":81.11013754200005,"ok":true,"turns":3,"output":407},
+{"date":"2026-11-25T06:35:50.083Z","machine":"Apple M3 Pro 36 GB","model":"qwen3.8-27b","config":"mtp","thinking":"low","kind":"task","secs":84.85430979200011,"ok":true,"turns":3,"output":466},
+{"date":"2026-11-25T06:35:50.083Z","machine":"Apple M3 Pro 36 GB","model":"qwen3.8-27b","config":"dflash2","thinking":"off","kind":"task","secs":82.66614825000009,"ok":true,"turns":3,"output":489},
+{"date":"2026-11-25T06:35:50.083Z","machine":"Apple M3 Pro 36 GB","model":"qwen3.8-27b","config":"dflash2","thinking":"low","kind":"task","secs":82.99838454200001,"ok":true,"turns":3,"output":457},
+{"date":"2026-11-25T18:05:52.887Z","machine":"Apple M3 Pro 36 GB","model":"lfm2.5-2.6b","config":"none","thinking":"off","kind":"decode","tps":23.310633495913287,"ttft":0.4646189589999999,"tokens":512},
+{"date":"2026-11-25T18:05:52.887Z","machine":"Apple M3 Pro 36 GB","model":"lfm2.5-2.6b","config":"none","thinking":"off","kind":"decode","tps":23.083569028954372,"ttft":0.4394419999999991,"tokens":512},
+{"date":"2026-11-25T18:05:52.887Z","machine":"Apple M3 Pro 36 GB","model":"lfm2.5-2.6b","config":"none","thinking":"off","kind":"decode","tps":22.773308813030958,"ttft":0.586677208000001,"tokens":512},
+{"date":"2026-11-25T18:05:52.887Z","machine":"Apple M3 Pro 36 GB","model":"lfm2.5-2.6b","config":"none","thinking":"off","kind":"decode","tps":23.353844238399212,"ttft":0.43094695800000044,"tokens":512},
+{"date":"2026-11-25T18:05:52.887Z","machine":"Apple M3 Pro 36 GB","model":"lfm2.5-2.6b","config":"none","thinking":"off","kind":"decode","tps":23.41849856152321,"ttft":0.5493280420000083,"tokens":512},
+{"date":"2026-11-25T18:05:52.887Z","machine":"Apple M3 Pro 36 GB","model":"lfm2.5-2.6b","config":"none","thinking":"off","kind":"decode","tps":24.109364418006752,"ttft":0.5068826249999984,"tokens":512},
+{"date":"2026-11-25T18:05:52.887Z","machine":"Apple M3 Pro 36 GB","model":"lfm2.5-2.6b","config":"none","thinking":"off","kind":"decode","tps":23.277430431786247,"ttft":0.41688187499999185,"tokens":512},
+{"date":"2026-11-25T18:05:52.887Z","machine":"Apple M3 Pro 36 GB","model":"lfm2.5-2.6b","config":"none","thinking":"off","kind":"decode","tps":23.813035608712305,"ttft":0.42547179199999663,"tokens":512},
+{"date":"2026-11-25T18:05:52.887Z","machine":"Apple M3 Pro 36 GB","model":"lfm2.5-2.6b","config":"none","thinking":"off","kind":"decode","tps":24.032274357210245,"ttft":0.3840952919999836,"tokens":512},
+{"date":"2026-11-25T18:05:52.887Z","machine":"Apple M3 Pro 36 GB","model":"lfm2.5-2.6b","config":"none","thinking":"off","kind":"task","secs":45.278707874999995,"ok":true,"turns":3,"output":911},
+{"date":"2026-11-25T18:05:52.887Z","machine":"Apple M3 Pro 36 GB","model":"lfm2.5-2.6b","config":"none","thinking":"off","kind":"task","secs":42.32630120799999,"ok":true,"turns":3,"output":836},
+{"date":"2026-11-25T18:05:52.887Z","machine":"Apple M3 Pro 36 GB","model":"lfm2.5-2.6b","config":"none","thinking":"off","kind":"task","secs":42.51952724999998,"ok":true,"turns":3,"output":832},
+{"date":"2026-11-25T18:11:25.910Z","machine":"Apple M3 Pro 36 GB","model":"lfm2.5-2.6b","config":"dspark","thinking":"off","kind":"decode","tps":53.057638274885484,"ttft":0.3858468330000178,"tokens":512},
+{"date":"2026-11-25T18:11:25.910Z","machine":"Apple M3 Pro 36 GB","model":"lfm2.5-2.6b","config":"dspark","thinking":"off","kind":"decode","tps":50.71700986603414,"ttft":0.37071608300000664,"tokens":512},
+{"date":"2026-11-25T18:11:25.910Z","machine":"Apple M3 Pro 36 GB","model":"lfm2.5-2.6b","config":"dspark","thinking":"off","kind":"decode","tps":65.11998905450007,"ttft":0.37127479200001107,"tokens":512},
+{"date":"2026-11-25T18:11:25.910Z","machine":"Apple M3 Pro 36 GB","model":"lfm2.5-2.6b","config":"dspark","thinking":"off","kind":"decode","tps":54.409485765166195,"ttft":0.5388175420000334,"tokens":512},
+{"date":"2026-11-25T18:11:25.910Z","machine":"Apple M3 Pro 36 GB","model":"lfm2.5-2.6b","config":"dspark","thinking":"off","kind":"decode","tps":50.989813140079434,"ttft":0.5765897079999559,"tokens":512},
+{"date":"2026-11-25T18:11:25.910Z","machine":"Apple M3 Pro 36 GB","model":"lfm2.5-2.6b","config":"dspark","thinking":"off","kind":"decode","tps":64.24452176879875,"ttft":0.3878800829999964,"tokens":512},
+{"date":"2026-11-25T18:11:25.910Z","machine":"Apple M3 Pro 36 GB","model":"lfm2.5-2.6b","config":"dspark","thinking":"off","kind":"decode","tps":53.820161566427394,"ttft":0.5707553339999868,"tokens":512},
+{"date":"2026-11-25T18:11:25.910Z","machine":"Apple M3 Pro 36 GB","model":"lfm2.5-2.6b","config":"dspark","thinking":"off","kind":"decode","tps":50.93707754861869,"ttft":0.5837869169999612,"tokens":512},
+{"date":"2026-11-25T18:11:25.910Z","machine":"Apple M3 Pro 36 GB","model":"lfm2.5-2.6b","config":"dspark","thinking":"off","kind":"decode","tps":64.28672533690022,"ttft":0.5976188339999644,"tokens":512},
+{"date":"2026-11-25T18:11:25.910Z","machine":"Apple M3 Pro 36 GB","model":"lfm2.5-2.6b","config":"dspark","thinking":"off","kind":"task","secs":20.408696874999965,"ok":true,"turns":3,"output":856},
+{"date":"2026-11-25T18:11:25.910Z","machine":"Apple M3 Pro 36 GB","model":"lfm2.5-2.6b","config":"dspark","thinking":"off","kind":"task","secs":19.710746625000027,"ok":true,"turns":3,"output":854},
+{"date":"2026-11-25T18:11:25.910Z","machine":"Apple M3 Pro 36 GB","model":"lfm2.5-2.6b","config":"dspark","thinking":"off","kind":"task","secs":20.23047200000001,"ok":true,"turns":3,"output":857}
+]

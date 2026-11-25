@@ -2,10 +2,6 @@
 
 A native local LLM backend for the [Pi](https://github.com/earendil-works/pi) coding agent, built on [mlx-vlm](https://github.com/Neywa-Labs/mlx-vlm). It speeds up inference on Apple Silicon with speculative decoding (MTP, DFlash, DFlash2, DSpark) and keeps the Ollama-style experience: pull a model, pick it in `/model`, chat. Everything runs locally on `127.0.0.1`, next to Ollama.
 
-## Speed
-
-Charts for MacBook Pro (M1 Pro) and Mac Studio (Ultra) are coming. Raw results so far (M3 Pro): [bench/results.json](bench/results.json) (Qwen3.5 9B) and [bench/results-27b.json](bench/results-27b.json) (Qwen3.8 27B).
-
 ## Install
 
 ```sh
@@ -79,4 +75,4 @@ Any other mlx-vlm variable you set (`MLX_VLM_*`, `APC_*`) is passed through and 
 | `~/.pi/agent/mlx-vlm/port` | Port picked when 8080 was taken |
 | `~/.cache/huggingface/` | Model weights, shared with other Hugging Face tools |
 
-Design notes, measurements, known gaps and development commands: [NOTES.md](NOTES.md).
+Design notes, measurements, known gaps and development commands: [docs/NOTES.md](docs/NOTES.md).

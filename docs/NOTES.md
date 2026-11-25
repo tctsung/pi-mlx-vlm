@@ -17,6 +17,14 @@ Test model `mlx-community/Qwen3.5-9B-4bit` with `mlx-community/Qwen3.5-9B-MTP-4b
 | Keep-alive and queue | With `PI_MLX_KEEP_ALIVE=20s` on the 9B, the model was loaded at 15 s and unloaded by 40 s; the next request reloaded it in 17 s. The watchdog exited when the server was killed. Two concurrent requests with `MLX_VLM_MAX_NUM_SEQS=1` both completed, one after the other. |
 | Thinking control | `reasoning_effort` maps to `enable_thinking` plus a template kwarg. `none` turns thinking off. The Qwen3.8 template accepts `low / medium / xhigh` (default `xhigh`); the Qwen3.5 template only supports on/off. |
 
+## Benchmarks
+
+![Decode speed: Ollama vs mlx-vlm with drafters](../bench/speed.svg)
+
+Drawn by `bench/chart.ts` from `bench/results.json`, on the M3 Pro (36 GB) only so far. Ollama's `qwen3.8:27b-mlx` tag has MTP built in, which is why it leads on the 27B.
+
+Next: run the bench on a Mac Studio and a 16 GB MacBook Pro, then put the chart in the README. On 16 GB, skip the 27B and 31B models (16-18 GB of weights) and use qwen3.5-9b, qwen3.5-4b, gemma4-e4b and lfm2.5-2.6b.
+
 ## Findings that changed the design
 
 1. **Prefix cache matters more than the drafter for agent work.** A 4-turn Pi task sends ~5.3K prompt tokens per turn. With mlx-vlm's APC off (its default), every turn re-prefills: 78 s for the task. With `APC_ENABLED=1` it takes 31 s, and 15.8K of 21.4K prompt tokens are read from cache. So the extension starts the server with APC on by default, memory tier only (`APC_DISK_ENABLED=0`, so no silent 20 GB disk cache).
@@ -33,7 +41,10 @@ Test model `mlx-community/Qwen3.5-9B-4bit` with `mlx-community/Qwen3.5-9B-MTP-4b
 6. **Switching entries reloads the model.** A drafter change makes the server reload the target on the next request and drops the prefix cache. On the 9B the first request after a switch takes ~15 s; later requests are warm.
 7. **Ollama's 27B MLX tag has MTP built in.** `qwen3.8:27b-mlx` contains `mtp.*` tensors and Ollama 0.40.18 speculates with them: 23.5 tok/s (22.5 by Ollama's own `eval_duration`), against 18.0 for mlx-vlm + MTP (drafter `block_size: 3`, adaptive) and 18.7 for DFlash2 (adaptive, starts at 3 rows, ceiling 5) on the M3 Pro. Plain mlx-vlm gets 8.7, which is about the memory-bandwidth limit for an 18 GB dense model. DFlash2's block sizing is already adaptive upstream, so no sweep was done.
 
-8. **Small catalog pairs, measured through Pi** (`pi -p`, thinking off, same coding prompt, ~5K-token Pi prompt, server decode tok/s). LFM2.5-2.6B (bf16) with DSpark: 44-58 against 23 without, and the same text both ways (LFM's greedy default). Gemma 4 E4B (4-bit) with its MTP assistant: 55 against 39. Both drafters load as-is from Hugging Face, with no conversion.
+8. **Small catalog pairs, measured through Pi** (`pi -p`, thinking off, same coding prompt, ~5K-token Pi prompt, server decode tok/s). LFM2.5-2.6B (bf16) with DSpark: 44-58 against 23 without, and the same text both ways (LFM's greedy default). `bench/bench.ts` on it, 9 generations each: 56.4 against 23.5 tok/s (2.4×), and the Pi agent task in 20 s against 43 s, tests passing every time. Gemma 4 E4B (4-bit) with its MTP assistant: 55 against 39. Both drafters load as-is from Hugging Face, with no conversion.
+
+9. **Quantization.** The catalog's `-4bit` and `-8bit` repos are mlx-community conversions made with mlx-vlm's own `mlx_vlm.convert` (the model cards say so): affine quantization, group size 64, a bf16 scale and bias per group. That is about 4.5 bits per weight at 4-bit and 8.5 at 8-bit, plus small unquantized parts, so Qwen3.8-27B is 16.1 GB at 4-bit and 29.5 GB at 8-bit, not exactly double. mlx-vlm loads these files as-is. The DFlash drafters are converted the same way at pull. 8-bit is close to lossless; 4-bit costs a little quality for about half the memory and faster decode, the usual choice on a laptop. Ollama's `-mlx` tags use NVFP4 instead (4-bit floats with a scale every 16 weights), so the Ollama bars compare a slightly different 4-bit format. LFM models run from Liquid's own bf16 weights.
+10. **Bench results are one file of samples.** `bench/bench.ts` appends one row per generation or task (`machine`, `model`, `config`, `thinking`, `kind`, then `tps`/`ttft`/`tokens` or `secs`/`ok`/`turns`). `bench/chart.ts` reads every `bench/*.json`, so results copied from another machine just sit next to it, and the chart averages all runs per model, machine and config. Reruns add samples instead of overwriting.
 
 ## Design choices
 
@@ -65,6 +76,7 @@ Test model `mlx-community/Qwen3.5-9B-4bit` with `mlx-community/Qwen3.5-9B-MTP-4b
 - `--draft <repo>` with both methods uses the same repo for both; pass one method with `--draft`.
 - The drafter is a server-wide setting. Two Pi sessions using different `mlx/*` entries at the same time make the server reload on every switch. Use one entry per machine at a time, or the fallback from the plan: one server per pairing on separate ports.
 - Changing `/thinking` on Qwen3.8 re-reads the whole prompt once. The template puts the reasoning-effort sentence at the start of the system prompt, so any prefix cache misses. On the 27B, the first request at a new level took ~50 s for Pi's ~5K-token prompt, against 12 s at a cached level. Ollama does the same: with a 2.3K-token system prompt, a low→medium change took 21.4 s of prefill against 0.12 s cached. llama.cpp's prompt cache also reuses only a shared prefix. So this is how the model works, not an extension gap.
+- `/thinking` shows only the levels a model's chat template understands, set per family in `FAMILIES`. Qwen3.8 takes `low / medium / xhigh` (shown as low, medium, high); Qwen3.5, Gemma 4 (`enable_thinking`) and others are on/off, so Pi shows `off` and `medium`. Ollama lists more levels, but for these models it maps every level above off to the same `think: true`. LFM2.5's template always opens a `<think>` block, so it thinks even at `off`.
 - The DFlash block size only affects speed: output and memory are the same at any value. Without tuning, mlx-vlm's adaptive default (ceiling = the checkpoint's `block_size`) already beats no drafter, at 34-41 tok/s vs 25 on the 9B. The catalog writes `block_size: 4` at pull for the measured 47-55 tok/s. DFlash2 (27B) adapts on its own. Re-check on other chips with `bench/bench.ts` if desired.
 
 ## Develop
@@ -74,6 +86,7 @@ npm install
 npm test            # unit tests + fake mlx-vlm server + fake Pi
 npm run typecheck   # against @earendil-works/pi-coding-agent types
 npm run e2e         # real Pi + mlx-vlm + Ollama, fresh agent dir
-npm run bench       # Ollama vs mlx-vlm / MTP / DFlash, writes bench/results.json
-node bench/chart.ts # redraws bench/speed-*.{html,svg} from bench/results.json
+npm run bench -- --model qwen3.5-9b --ollama qwen3.5:9b-mlx   # appends samples to bench/results.json
+npm run bench -- --model lfm2.5-2.6b --thinking off             # no Ollama counterpart: omit --ollama
+node bench/chart.ts # redraws bench/speed.svg from every bench/*.json, averaging all runs per model, machine and drafter
 ```

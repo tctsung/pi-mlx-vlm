@@ -1,15 +1,15 @@
-// Benchmark: Ollama vs mlx-vlm (no drafter, MTP, DFlash) on streamed decode speed and on a real Pi agent task; writes bench/results.json. Needs both servers up and the mlx pairings pulled.
+// Benchmark one model: Ollama (optional) vs mlx-vlm with each pulled drafter, on streamed decode speed and a real Pi agent task; appends one sample per run to bench/results.json.
 import { spawnSync } from "node:child_process";
-import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
-import { homedir, tmpdir } from "node:os";
+import { existsSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { homedir, tmpdir, totalmem } from "node:os";
 import { join } from "node:path";
 import { parseArgs } from "node:util";
 import { known, toModels } from "../src/index.ts";
 
 const { values: opt } = parseArgs({
   options: {
-    ollama: { type: "string", default: "qwen3.5:9b-mlx" },
-    mlx: { type: "string", default: "mlx-community/Qwen3.5-9B-4bit" },
+    model: { type: "string", default: "qwen3.5-9b" },
+    ollama: { type: "string", default: "" },
     reps: { type: "string", default: "3" },
     thinking: { type: "string", default: "off,medium" },
     out: { type: "string", default: "bench/results.json" },
@@ -17,16 +17,19 @@ const { values: opt } = parseArgs({
   },
 });
 const reps = Number(opt.reps);
-const OLLAMA = "http://127.0.0.1:11434";
-const MLX = `http://127.0.0.1:${process.env.PI_MLX_PORT ?? 8080}`;
 const agentDir = process.env.PI_CODING_AGENT_DIR ?? join(homedir(), ".pi", "agent");
-const pairs = JSON.parse(readFileSync(join(agentDir, "mlx-vlm.json"), "utf8")).models.filter((m: any) => m.target === opt.mlx);
-const LABEL: Record<string, string> = { "": "mlx-vlm", mtp: "mlx-vlm + MTP", dflash: "mlx-vlm + DFlash", dflash2: "mlx-vlm + DFlash2", dspark: "mlx-vlm + DSpark" };
+const portFile = join(agentDir, "mlx-vlm", "port");
+const OLLAMA = "http://127.0.0.1:11434";
+const MLX = `http://127.0.0.1:${process.env.PI_MLX_PORT ?? (existsSync(portFile) ? readFileSync(portFile, "utf8").trim() : 8080)}`;
+const [model, k] = known(opt.model!) ?? [opt.model!];
+const target = k?.repo ?? model;
+const pairs = JSON.parse(readFileSync(join(agentDir, "mlx-vlm.json"), "utf8")).models.filter((m: any) => m.target === target);
+if (!pairs.length) throw new Error(`${model} is not pulled; run /mlx pull ${model}`);
 
-type Config = { label: string; base: string; model: string; pi: string; draft?: { draft_model: string | null; draft_kind: string | null } };
+type Config = { config: string; base: string; model: string; pi: string; draft?: { draft_model: string | null; draft_kind: string | null } };
 const configs: Config[] = [
-  { label: "Ollama (MLX)", base: OLLAMA, model: opt.ollama!, pi: `ollama/${opt.ollama}` },
-  ...pairs.map((e: any) => ({ label: LABEL[e.id.split("@")[1] ?? ""], base: MLX, model: e.target, pi: `mlx/${e.id}`, draft: { draft_model: e.draft, draft_kind: e.kind } })),
+  ...(opt.ollama ? [{ config: "ollama", base: OLLAMA, model: opt.ollama, pi: `ollama/${opt.ollama}` }] : []),
+  ...pairs.map((e: any) => ({ config: e.id.split("@")[1] ?? "none", base: MLX, model: e.target, pi: `mlx/${e.id}`, draft: { draft_model: e.draft, draft_kind: e.kind } })),
 ];
 
 const PROMPTS = [
@@ -39,7 +42,7 @@ const json = { "content-type": "application/json" };
 
 async function prepare(c: Config) {
   if (c.base === MLX) {
-    await fetch(`${OLLAMA}/api/generate`, { method: "POST", headers: json, body: JSON.stringify({ model: opt.ollama, keep_alive: 0 }) });
+    if (opt.ollama) await fetch(`${OLLAMA}/api/generate`, { method: "POST", headers: json, body: JSON.stringify({ model: opt.ollama, keep_alive: 0 }) });
     await fetch(`${MLX}/v1/settings`, { method: "PATCH", headers: json, body: JSON.stringify(c.draft) });
   } else {
     await fetch(`${MLX}/unload`, { method: "POST" }).catch(() => {});
@@ -47,7 +50,7 @@ async function prepare(c: Config) {
   await stream(c, "Say hi.", 8, "off");
 }
 
-const [family] = toModels([{ id: opt.mlx!, target: opt.mlx!, draft: null, kind: null, family: known(opt.mlx!)?.[1].family ?? "default" }]);
+const [family] = toModels([{ id: model, target, draft: null, kind: null, family: k?.family ?? "default" }]);
 const sampling = (thinking: string) => ({ ...family.samplingParams, ...(thinking === "off" ? family.samplingParamsByThinkingLevel?.off : {}) });
 
 async function stream(c: Config, prompt: string, maxTokens: number, thinking: string) {
@@ -87,19 +90,22 @@ function piTask(c: Config, thinking: string) {
   return { secs, ok, turns: usage.length, output: usage.reduce((s, u) => s + (u.output ?? 0), 0) };
 }
 
-const results: any = { date: new Date().toISOString(), machine: spawnSync("sysctl", ["-n", "machdep.cpu.brand_string"], { encoding: "utf8" }).stdout.trim(), ollama: opt.ollama, mlx: opt.mlx, task: TASK, decode: [], tasks: [] };
+const machine = `${spawnSync("sysctl", ["-n", "machdep.cpu.brand_string"], { encoding: "utf8" }).stdout.trim()} ${Math.round(totalmem() / 2 ** 30)} GB`;
+const samples: object[] = existsSync(opt.out!) ? JSON.parse(readFileSync(opt.out!, "utf8")) : [];
+const save = () => writeFileSync(opt.out!, `[\n${samples.map((s) => JSON.stringify(s)).join(",\n")}\n]\n`);
 for (const c of configs) {
   await prepare(c);
+  const base = { date: new Date().toISOString(), machine, model, config: c.config, ...(c.config === "ollama" ? { ollama: opt.ollama } : {}) };
   for (const thinking of opt.thinking!.split(",")) {
     const runs = [];
     for (let r = 0; r < reps; r++) for (const p of PROMPTS) runs.push(await stream(c, p, 512, thinking));
-    results.decode.push({ label: c.label, thinking, runs });
-    console.log(c.label, thinking, "decode tok/s", (runs.reduce((s, x) => s + x.tps, 0) / runs.length).toFixed(1));
+    samples.push(...runs.map((x) => ({ ...base, thinking, kind: "decode", ...x })));
+    console.log(model, c.config, thinking, "decode tok/s", (runs.reduce((s, x) => s + x.tps, 0) / runs.length).toFixed(1));
   }
   if (!opt["decode-only"]) for (const thinking of opt.thinking!.split(",")) {
     const tasks = Array.from({ length: reps }, () => piTask(c, thinking));
-    results.tasks.push({ label: c.label, thinking, runs: tasks });
-    console.log(c.label, thinking, "task s", tasks.map((t) => `${t.secs.toFixed(0)}${t.ok ? "" : "!"}`).join(" "));
+    samples.push(...tasks.map((x) => ({ ...base, thinking, kind: "task", ...x })));
+    console.log(model, c.config, thinking, "task s", tasks.map((t) => `${t.secs.toFixed(0)}${t.ok ? "" : "!"}`).join(" "));
   }
-  writeFileSync(opt.out!, JSON.stringify(results, null, 2));
+  save();
 }
