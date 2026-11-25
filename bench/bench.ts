@@ -25,7 +25,7 @@ const MLX = `http://127.0.0.1:${process.env.PI_MLX_PORT ?? (existsSync(portFile)
 const [model, k] = known(opt.model!) ?? [opt.model!];
 const target = k?.repo ?? model;
 const pairs = JSON.parse(readFileSync(join(agentDir, "mlx-vlm.json"), "utf8")).models.filter((m: any) => m.target === target);
-if (!pairs.length) throw new Error(`${model} is not pulled; run /mlx pull ${model}`);
+if (!pairs.length) throw new Error(`${model} is not pulled; run pi-mlx pull ${model}`);
 
 type Config = { config: string; base: string; model: string; pi: string; draft?: { draft_model: string | null; draft_kind: string | null } };
 const configs: Config[] = [
