@@ -4,15 +4,13 @@ A native local LLM backend for the [Pi](https://github.com/earendil-works/pi) co
 
 ## Install
 
-Needs an Apple Silicon Mac, Node 22.19 or newer (what Pi itself requires), [Pi](https://github.com/earendil-works/pi) (`npm install -g @earendil-works/pi-coding-agent`) and [uv](https://docs.astral.sh/uv/) (`brew install uv`), which installs mlx-vlm on first use.
+Requires an Apple Silicon Mac and [uv](https://docs.astral.sh/uv/getting-started/installation/), which installs mlx-vlm on first use.
 
 ```sh
-npm install -g github:tctsung/pi-mlx-vlm && pi install "$(npm root -g)/pi-mlx-vlm"
+pi install git:github.com/tctsung/pi-mlx-vlm
 ```
 
-From a copy of the repo instead: `cd pi-mlx-vlm && npm install -g . && pi install "$(npm root -g)/pi-mlx-vlm"`. That links the folder, so keep it where it is.
-
-This adds the `mlx` provider to Pi and the `pi-mlx` command for models. Update both later by running the same `npm install -g github:tctsung/pi-mlx-vlm` again. The repo must be public, or your machine needs a GitHub SSH key.
+This adds the `mlx` provider to Pi and the `pi-mlx` command for models, linked into `~/.local/bin` next to uv's tools. If your shell can't find `pi-mlx`, run `uv tool update-shell` and open a new terminal. Update with `pi update git:github.com/tctsung/pi-mlx-vlm`; uninstall with `pi remove git:github.com/tctsung/pi-mlx-vlm && rm ~/.local/bin/pi-mlx`.
 
 ## Get a model
 

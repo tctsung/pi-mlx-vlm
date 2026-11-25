@@ -25,7 +25,8 @@
     "test": "node --test test/*.test.ts",
     "e2e": "node test/e2e.ts",
     "typecheck": "tsc --noEmit",
-    "bench": "node bench/bench.ts"
+    "bench": "node bench/bench.ts",
+    "postinstall": "node -e \"const f=require('fs'),p=require('path'),d=p.join(require('os').homedir(),'.local','bin');try{f.mkdirSync(d,{recursive:true});f.symlinkSync(p.resolve('bin/pi-mlx.mjs'),p.join(d,'pi-mlx'))}catch{}\""
   },
   "peerDependencies": {
     "@earendil-works/pi-coding-agent": "*"
@@ -48,5 +49,6 @@
     "bin",
     "catalog.json",
     "README.md"
-  ]
+  ],
+  "repository": "github:tctsung/pi-mlx-vlm"
 }

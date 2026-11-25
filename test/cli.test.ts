@@ -2,7 +2,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readlinkSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -74,6 +74,18 @@ test("pi-mlx never installs mlx-vlm without asking; without a terminal it prints
   assert.match(res.stderr, /uv tool install mlx-vlm && uv tool install huggingface_hub/);
   assert.ok(!existsSync(join(s.root, "uv.log")));
   assert.ok(!existsSync(join(s.agent, "mlx-vlm.json")));
+});
+
+test("installing the package links pi-mlx into ~/.local/bin and never replaces an existing one", () => {
+  const s = sandbox();
+  const install = () => spawnSync("npm", ["run", "postinstall", "--silent"], { cwd: join(CLI, "..", ".."), env: { ...process.env, HOME: s.home }, encoding: "utf8" });
+  assert.equal(install().status, 0);
+  const link = join(s.home, ".local", "bin", "pi-mlx");
+  assert.equal(readlinkSync(link), CLI);
+  assert.match(spawnSync(link, ["list"], { env: { ...process.env, PI_CODING_AGENT_DIR: s.agent }, encoding: "utf8" }).stdout, /No models pulled yet/);
+  rmSync(link), writeFileSync(link, "mine");
+  assert.equal(install().status, 0);
+  assert.equal(readFileSync(link, "utf8"), "mine");
 });
 
 test("pi-mlx pull with no model prints usage and fails", () => {
