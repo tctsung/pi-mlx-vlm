@@ -42,7 +42,10 @@ Test model `mlx-community/Qwen3.5-9B-4bit` with `mlx-community/Qwen3.5-9B-MTP-4b
 - **The server is detached.** It outlives Pi, like Ollama, so the model stays warm between sessions. mlx-vlm has no idle unload, so `src/keepalive.mjs` runs next to it with the server's pid. It polls `/metrics` and POSTs `/unload` once `summary.in_flight` is 0 (queued requests count as in flight) and `last_request_at` is older than `PI_MLX_KEEP_ALIVE`. It exits when the pid is gone. It is plain `.mjs` because Node won't strip types under `node_modules`.
 - **Server env defaults** (`SERVER_ENV`): APC on, memory tier only, and `MLX_VLM_MAX_NUM_SEQS=1` (Ollama's MLX scheduler also logs `parallel=1`; extra requests queue). They are merged under `process.env`, so the user's own `MLX_VLM_*` and `APC_*` values win. The only new variables are `PI_MLX_PORT` (default 8080; Ollama stays on 11434) and `PI_MLX_KEEP_ALIVE`, which mlx-vlm has no equivalent for.
 - **Binaries** are looked up in `~/.local/bin` (uv's tool dir) and then `PATH`, so a fresh shell works right after `uv tool install`.
-- **Non-interactive setup.** In `pi -p` there is no UI, so `/mlx setup` picks the first MLX match for an installed Ollama model and prints to stdout. It won't install anything without a UI to ask in; it prints the exact `uv tool install` command instead.
+- **mlx-vlm is installed lazily, after asking.** `/mlx model` and `/mlx pull` check for `mlx_vlm.server` and `hf`. If either is missing, they run `uv tool install mlx-vlm` and `uv tool install huggingface_hub` after a confirm prompt. `pi install` does not do it: mlx-vlm is a Python tool outside npm, installs only happen after asking, and Ollama-backed Pi providers also need Ollama installed separately. Without a UI (`pi -p`), the command prints the exact `uv` line instead.
+- **The model list is a verified catalog.** `/mlx model` shows `KNOWN` plus anything already pulled; `pi update` brings new entries. There is no machine-readable upstream list. mlx-vlm's "Supported Models" table (`docs/usage.md`) has 4 pairs and isn't shipped in the package. Hugging Face drafter names are inconsistent (`-MTP-4bit`, `-oQ4e-mtp`, `-mtp-msq`, `-DFlash`, `-DFlash2`, `-DFlash-b16`), so auto-pairing would offer unverified pairs that can fail after a 15 GB download. Anything else goes through `/mlx pull <repo> --draft <repo>`.
+- **Command name.** If another extension also registers `/mlx`, Pi renames both to `/mlx:1` and `/mlx:2` rather than failing.
+- **Port conflicts fail at once.** Before spawning, the extension calls `/health`, which mlx-vlm always answers with 200, even while loading. If some other app answers on the port, it stops right away with `port N is used by another app. Set PI_MLX_PORT`; this was verified live and took under 1 s. If the spawned server exits during startup, polling stops then instead of after 2 minutes. Restarting after `pkill` reuses the same port: nothing answers, so a new server starts.
 
 ## Safety
 
@@ -59,3 +62,14 @@ Test model `mlx-community/Qwen3.5-9B-4bit` with `mlx-community/Qwen3.5-9B-MTP-4b
 - The drafter is a server-wide setting. Two Pi sessions using different `mlx/*` entries at the same time make the server reload on every switch. Use one entry per machine at a time, or the fallback from the plan: one server per pairing on separate ports.
 - Changing `/thinking` on Qwen3.8 re-reads the whole prompt once. The template puts the reasoning-effort sentence at the start of the system prompt, so any prefix cache misses. On the 27B, the first request at a new level took ~50 s for Pi's ~5K-token prompt, against 12 s at a cached level. Ollama does the same: with a 2.3K-token system prompt, a low→medium change took 21.4 s of prefill against 0.12 s cached. llama.cpp's prompt cache also reuses only a shared prefix. So this is how the model works, not an extension gap.
 - The DFlash block size only affects speed: output and memory are the same at any value. Without tuning, mlx-vlm's adaptive default (ceiling = the checkpoint's `block_size`) already beats no drafter, at 34-41 tok/s vs 25 on the 9B. The catalog writes `block_size: 4` at pull for the measured 47-55 tok/s. DFlash2 (27B) adapts on its own. Re-check on other chips with `bench/bench.ts` if desired.
+
+## Develop
+
+```sh
+npm install
+npm test            # unit tests + fake mlx-vlm server + fake Pi
+npm run typecheck   # against @earendil-works/pi-coding-agent types
+npm run e2e         # real Pi + mlx-vlm + Ollama, fresh agent dir
+npm run bench       # Ollama vs mlx-vlm / MTP / DFlash, writes bench/results.json
+node bench/chart.ts # redraws bench/speed-*.{html,svg} from bench/results.json
+```

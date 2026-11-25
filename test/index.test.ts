@@ -35,7 +35,7 @@ await new Promise<void>((r) => fake.listen(0, "127.0.0.1", r));
 process.env.PI_MLX_PORT = String((fake.address() as AddressInfo).port);
 process.env.PI_CODING_AGENT_DIR = mkdtempSync(join(tmpdir(), "pi-mlx-"));
 const mod = await import("../src/index.ts");
-const { KNOWN, toModels, planPull, fromOllama, serverArgs, parsePullArgs, SERVER_ENV, setBlock, keepAlive, WATCHDOG } = mod;
+const { KNOWN, toModels, planPull, serverArgs, parsePullArgs, SERVER_ENV, setBlock, keepAlive, WATCHDOG } = mod;
 test.after(() => fake.close());
 
 const Q35 = "mlx-community/Qwen3.5-9B-4bit";
@@ -154,13 +154,7 @@ test("pull args parse repo, methods and --draft", () => {
   assert.equal(parsePullArgs(""), undefined);
 });
 
-test("ollama tags map to their MLX equivalents", () => {
-  const out = "NAME                ID      SIZE\nqwen3.8:27b-mlx     5642    18 GB\nqwen3.5:9b-mlx      203e    8.9 GB\nllama3:8b  x  4 GB\n";
-  assert.deepEqual(fromOllama(out), ["mlx-community/Qwen3.8-27B-4bit", Q35]);
-  assert.deepEqual(fromOllama(""), []);
-});
-
-function fakePi() {
+function fakePi(bins?: string) {
   const handlers: Record<string, Function> = {};
   const providers: [string, any][] = [];
   const commands: Record<string, any> = {};
@@ -172,23 +166,36 @@ function fakePi() {
     registerCommand: (n: string, o: any) => (commands[n] = o),
     exec: async (cmd: string, args: string[]) => {
       execs.push([cmd, ...args]);
+      if (cmd.endsWith("uv") && bins) for (const b of ["hf", "mlx_vlm.server", "mlx_vlm.convert"]) writeFileSync(join(bins, b), "");
       if (cmd.endsWith("mlx_vlm.convert")) {
         const out = args[args.indexOf("--mlx-path") + 1];
         mkdirSync(out, { recursive: true });
         writeFileSync(join(out, "config.json"), JSON.stringify({ block_size: 16 }));
       }
-      return { code: 0, stdout: cmd.endsWith("ollama") ? "NAME ID\nqwen3.5:9b-mlx 203e\n" : "", stderr: "", killed: false };
+      return { code: 0, stdout: "", stderr: "", killed: false };
     },
     setModel: async () => true,
   };
-  const ctx = (model?: { provider: string; id: string }, hasUI = true) => ({
+  const ctx = (model?: { provider: string; id: string }, hasUI = true, ui: { confirm?: boolean; select?: (t: string, o: string[]) => string | undefined } = {}) => ({
     model,
     hasUI,
-    ui: { notify: (m: string) => notes.push(m), setStatus: () => {}, confirm: async () => true, select: async (_: string, o: string[]) => o[0] },
-    modelRegistry: { find: () => undefined },
+    ui: { notify: (m: string) => notes.push(m), setStatus: () => {}, confirm: async () => ui.confirm ?? true, select: async (t: string, o: string[]) => ui.select?.(t, o) },
+    modelRegistry: { find: (provider: string, id: string) => ({ provider, id }) },
   });
   return { pi, handlers, providers, commands, execs, notes, ctx };
 }
+
+const printed = async (fn: () => Promise<unknown>) => {
+  const log = console.log;
+  const out: string[] = [];
+  console.log = (m: string) => out.push(m);
+  try {
+    await fn();
+  } finally {
+    console.log = log;
+  }
+  return out.join("\n");
+};
 
 test("extension registers mlx provider on 127.0.0.1 with a dummy key and /mlx command", () => {
   const f = fakePi();
@@ -241,20 +248,64 @@ test("/mlx status and unload talk to the server", async () => {
   assert.match(f.notes.at(-1)!, /unload/i);
 });
 
-test("/mlx setup without UI picks the MLX match of an installed Ollama model and prints progress", async () => {
+test("a port held by another app fails at once with a clear message, without spawning a server", async () => {
+  const other = createServer((_, res) => ((res.statusCode = 404), res.end("not mlx-vlm")));
+  await new Promise<void>((r) => other.listen(0, "127.0.0.1", r));
+  const port = process.env.PI_MLX_PORT;
+  process.env.PI_MLX_PORT = String((other.address() as AddressInfo).port);
+  const url = "../src/index.ts?busy-port";
+  const busy = await import(url);
+  process.env.PI_MLX_PORT = port;
+  const f = fakePi();
+  busy.default(f.pi as any);
+  const t0 = performance.now();
+  await f.handlers.before_provider_request({ payload: {} }, f.ctx({ provider: "mlx", id: Q35 }));
+  other.close();
+  assert.match(f.notes.join("\n"), /used by another app/);
+  assert.ok(performance.now() - t0 < 2000);
+});
+
+test("/mlx model without UI lists the catalog, marks what is installed, names DFlash2", async () => {
   const f = fakePi();
   mod.default(f.pi as any);
-  const log = console.log;
-  const printed: string[] = [];
-  console.log = (m: string) => printed.push(m);
+  const lines = (await printed(() => f.commands.mlx.handler("model", f.ctx(undefined, false)))).split("\n");
+  const line = (t: string) => lines.find((l) => l.startsWith(`${t} `))!;
+  assert.match(line(Q35), /MTP \+ DFlash .*installed/);
+  assert.doesNotMatch(line(Q38), /installed/);
+  assert.match(line(Q38), /MTP \+ DFlash2/);
+});
+
+test("/mlx model: Enter on a model pulls it once with its drafters, then just switches to it", async () => {
+  const f = fakePi();
+  mod.default(f.pi as any);
+  const pick = { select: (_: string, o: string[]) => o.find((l) => l.startsWith(`${Q38} `)) };
+  await f.commands.mlx.handler("model", f.ctx(undefined, true, pick));
+  assert.ok(f.execs.some((e) => e.slice(1).join(" ") === `download ${Q38}`), JSON.stringify(f.execs));
+  assert.match(f.notes.at(-1)!, new RegExp(`Now using mlx/${Q38}@dflash`));
+  const pulls = f.execs.length;
+  await f.commands.mlx.handler("model", f.ctx(undefined, true, pick));
+  assert.equal(f.execs.length, pulls);
+  assert.match(f.notes.at(-1)!, /Now using/);
+});
+
+test("/mlx pull installs mlx-vlm with uv only after asking, then pulls and tunes the DFlash block", async () => {
+  const bins = mkdtempSync(join(tmpdir(), "bin-"));
+  writeFileSync(join(bins, "uv"), "");
+  const env = { HOME: process.env.HOME, PATH: process.env.PATH };
+  Object.assign(process.env, { HOME: bins, PATH: bins });
   try {
-    await f.commands.mlx.handler("setup", f.ctx(undefined, false));
+    const no = fakePi(bins);
+    mod.default(no.pi as any);
+    await no.commands.mlx.handler(`pull ${Q35} dflash`, no.ctx(undefined, true, { confirm: false }));
+    assert.deepEqual(no.execs, []);
+    const yes = fakePi(bins);
+    mod.default(yes.pi as any);
+    await yes.commands.mlx.handler(`pull ${Q35} dflash`, yes.ctx());
+    assert.deepEqual(yes.execs.map((e) => e.slice(1, 4).join(" ")).slice(0, 2), ["tool install mlx-vlm", "tool install huggingface_hub"]);
+    assert.ok(yes.execs.some((e) => e[0] === join(bins, "mlx_vlm.convert")));
   } finally {
-    console.log = log;
+    Object.assign(process.env, env);
   }
-  assert.ok(f.execs.some((e) => e.slice(1).join(" ") === `download ${Q35}`), JSON.stringify(f.execs));
-  assert.equal(f.notes.length, 0);
-  assert.match(printed.join("\n"), /Added mlx\//);
   const drafter = join(process.env.PI_CODING_AGENT_DIR!, "mlx-vlm", "drafters", "Qwen3.5-9B-DFlash-4bit", "config.json");
   assert.equal(JSON.parse(readFileSync(drafter, "utf8")).block_size, 4);
 });

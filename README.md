@@ -1,38 +1,10 @@
 # pi-mlx-vlm
 
-Local MLX models for the [Pi](https://github.com/earendil-works/pi) coding agent, with speculative decoding (MTP and DFlash). Inference runs on [mlx-vlm](https://github.com/Neywa-Labs/mlx-vlm); this package is glue. It registers an `mlx` provider, installs models together with their drafters, and runs one mlx-vlm server on `127.0.0.1:8080`, next to Ollama, without conflicting with it.
-
-Everything is free and local. No hosted APIs.
+A native local LLM backend for the [Pi](https://github.com/earendil-works/pi) coding agent, built on [mlx-vlm](https://github.com/Neywa-Labs/mlx-vlm). It speeds up inference on Apple Silicon with speculative decoding (MTP, DFlash, DFlash2) and keeps the Ollama-style experience: pull a model, pick it in `/model`, chat. Everything runs locally on `127.0.0.1`, next to Ollama.
 
 ## Speed
 
-<!-- bench:start -->
-![Decode speed](docs/speed-decode.svg)
-
-![Pi agent task time](docs/speed-task.svg)
-
-| Engine | Decode tok/s, thinking off | Decode tok/s, thinking on | Pi task, thinking off | Pi task, thinking on | Task tests passed |
-|---|---|---|---|---|---|
-| Ollama (MLX) | 21.2 (1.00×) | 21.2 (1.00×) | 37 s | 34 s | 6/6 |
-| mlx-vlm | 25.3 (1.20×) | 26.8 (1.26×) | 33 s | 44 s | 6/6 |
-| mlx-vlm + MTP | 42.0 (1.98×) | 41.4 (1.95×) | 26 s | 40 s | 6/6 |
-| mlx-vlm + DFlash | 48.3 (2.28×) | 49.2 (2.32×) | 27 s | 40 s | 6/6 |
-
-Apple M3 Pro, `mlx-community/Qwen3.5-9B-4bit` on mlx-vlm vs `qwen3.5:9b-mlx` on Ollama, 2026-11-25. Decode: mean of 9 streamed 512-token generations (3 prompts) with Qwen's sampling for each mode; × is relative to Ollama. Pi task: `Create fib.py with fib(n) returning the nth Fibonacci number (fib(0)=0) and test_fib.py with 3 unittest cases. Run python3 -m unittest and report the result.`, mean of 3 runs of `pi -p` with prefix caching on for both engines. Raw numbers in [bench/results.json](bench/results.json).
-<!-- bench:end -->
-
-### 27B: Ollama's tag already speculates
-
-On `qwen3.8:27b-mlx` vs `mlx-community/Qwen3.8-27B-4bit`, the result flips. The Ollama tag ships its own MTP head (`mtp.*` tensors in `ollama show -v`), and Ollama runs it. The 9B tag has no MTP head. On the same M3 Pro, Ollama's built-in MTP is ~25% faster than mlx-vlm's MTP or DFlash2:
-
-| Engine | Decode tok/s, thinking off | Decode tok/s, thinking low | Pi task, thinking off | Pi task, thinking low | Task tests passed |
-|---|---|---|---|---|---|
-| Ollama (MLX, built-in MTP) | 23.5 (1.00×) | 21.8 (1.00×) | 68 s | 70 s | 2/2 |
-| mlx-vlm | 8.7 (0.37×) | 8.6 (0.40×) | 105 s | 112 s | 2/2 |
-| mlx-vlm + MTP | 18.0 (0.77×) | 16.4 (0.75×) | 81 s | 85 s | 2/2 |
-| mlx-vlm + DFlash2 | 18.7 (0.79×) | 16.3 (0.75×) | 83 s | 83 s | 2/2 |
-
-Same prompts and task, 1 run each (decode: mean of 3 generations), 2026-11-25. Ollama's native `eval_duration` agrees (22.5 tok/s). Raw numbers in [bench/results-27b.json](bench/results-27b.json). On bigger chips the balance may differ, so rerun `node bench/bench.ts --ollama qwen3.8:27b-mlx --mlx mlx-community/Qwen3.8-27B-4bit --thinking off,low --out bench/results-27b.json` before switching a 27B setup.
+Charts for MacBook Pro (M1 Pro) and Mac Studio (Ultra) are coming. Raw results so far (M3 Pro): [bench/results.json](bench/results.json) (Qwen3.5 9B) and [bench/results-27b.json](bench/results-27b.json) (Qwen3.8 27B).
 
 ## Install
 
@@ -40,86 +12,52 @@ Same prompts and task, 1 run each (decode: mean of 3 generations), 2026-11-25. O
 pi install git:github.com/tctsung/pi-mlx-vlm
 ```
 
-Then inside Pi:
+Then, inside Pi, pick a model from the list. The first time, it asks to install mlx-vlm with `uv`:
 
 ```text
-/mlx setup
+/mlx model
 ```
 
-`/mlx setup` asks before running `uv tool install mlx-vlm` and `uv tool install huggingface_hub`. It then offers the MLX equivalents of the Ollama models you have installed, pulls the one you pick with both drafters, starts the server, and switches the session to its `@dflash` entry. In `/model`, press `Ctrl+S` to make that model the default.
+Or pull a specific model and drafter:
 
-### Migrate from Ollama in one line
-
-```sh
-uv tool install mlx-vlm && uv tool install huggingface_hub && pi install git:github.com/tctsung/pi-mlx-vlm && pi -p "/mlx setup"
+```text
+/mlx pull mlx-community/Qwen3.5-9B-4bit mtp
+/mlx pull mlx-community/Qwen3.8-27B-4bit dflash
+/mlx pull <mlx-repo> dflash --draft <drafter-repo>
 ```
-
-Without a UI, `/mlx setup` picks the MLX match of your first installed Ollama model (for example `qwen3.8:27b-mlx` → `mlx-community/Qwen3.8-27B-4bit`). To choose a model explicitly, pass it: `pi -p "/mlx setup mlx-community/Qwen3.8-27B-8bit"`. Then start Pi with `pi --model "mlx/mlx-community/Qwen3.8-27B-4bit@dflash"`, or pick the model in `/model` and press `Ctrl+S`.
-
-Migrating pays off where the Ollama tag has no MTP head of its own (the 9B: 2.3× decode with DFlash). For `qwen3.8:27b-mlx`, see the 27B table above first. Both providers stay available, so you can A/B in `/model` before choosing a default.
-
-If you used an Ollama Pi extension, remove it with `pi remove <source>` (`pi list` shows the source). Ollama itself stays installed on port 11434 and remains reachable as `ollama/*`.
 
 ## Use
 
 | In Pi | What it does |
 |---|---|
-| `/model` | Each pulled model has three entries: `mlx/<repo>` (no drafter), `mlx/<repo>@mtp`, `mlx/<repo>@dflash`. Switching between them, or to `ollama/*`, needs no restart. |
-| `/thinking` | Qwen3.8: `off`, `low`, `medium`, `high` (sent as `xhigh`). Qwen3.5: `off` or `medium` (on). This is the biggest speed lever. On Qwen3.8, the first request after a change re-reads the whole prompt, as it does on Ollama. |
-| `/mlx setup [repo]` | Installs mlx-vlm (after asking), pulls a model with its drafters, starts the server. |
-| `/mlx pull <repo> [mtp\|dflash] [--draft <repo>]` | Like `ollama pull`. Downloads the target and the MTP drafter with `hf download`, and converts the DFlash drafter to 4-bit with `mlx_vlm.convert`. For models not in the catalog, pass `--draft`. |
-| `/mlx status` | Shows server state, loaded model, active drafter and pulled entries. |
-| `/mlx unload` | Frees the model's memory. The server stays up. To stop it entirely: `pkill -f mlx_vlm.server`. |
+| `/model` | Each pulled model has up to three entries: `mlx/<repo>` (no drafter), `mlx/<repo>@mtp`, `mlx/<repo>@dflash`. Switching between them, or to `ollama/*`, needs no restart. |
+| `/thinking` | Qwen3.8: `off`, `low`, `medium`, `high`. Qwen3.5: `off` or `medium` (on). The first request after a change re-reads the prompt, as on Ollama. |
+| `/mlx model` | Lists models with verified drafters and marks what is installed. Enter pulls one (or switches to it if already installed). |
+| `/mlx pull <repo> [mtp\|dflash] [--draft <repo>]` | Pulls any mlx-vlm model with its drafter, like `ollama pull`. `dflash` uses DFlash2 where the drafter is DFlash2. The DFlash drafter is converted to 4-bit. |
+| `/mlx status` | Server state, loaded model, active drafter, pulled entries. |
+| `/mlx unload` | Frees the model's memory now. The next request loads it again. |
 
-The server starts on the first `mlx/*` request, or with `/mlx setup`. Before each request, the extension switches the drafter at runtime with `PATCH /v1/settings`. Nothing is restarted.
+The server starts on the first `mlx/*` request and is shared by all Pi sessions. Switching entries changes the drafter at runtime; nothing restarts. Update the model list with `pi update`, and mlx-vlm itself with `uv tool upgrade mlx-vlm`.
 
-## Memory and parallel requests
+## Config
 
-All Pi sessions share one server, and it holds one model at a time, so opening more sessions doesn't load more models. These work like Ollama's:
+Environment variables, read when the server starts. Set them in your shell profile. To apply a change, stop the server with `pkill -f mlx_vlm.server`; the next request starts it again.
 
-| Variable | Default | Ollama equivalent | Effect |
-|---|---|---|---|
-| `PI_MLX_KEEP_ALIVE` | `5m` | `OLLAMA_KEEP_ALIVE` | Unload the model after this much idle time, with nothing in flight or queued. Accepts `30s`, `10m`, `1h`, or plain seconds; `-1` keeps it loaded. |
-| `MLX_VLM_MAX_NUM_SEQS` | `1` | `OLLAMA_NUM_PARALLEL` | mlx-vlm's own setting for how many sequences decode at once. Further requests wait in the queue instead of each holding its own KV cache. |
-| `PI_MLX_PORT` | `8080` | port in `OLLAMA_HOST` | Server port, always on `127.0.0.1`. |
+| Variable | Default | Effect |
+|---|---|---|
+| `PI_MLX_KEEP_ALIVE` | `5m` | Unload the model after this much idle time, like `OLLAMA_KEEP_ALIVE`. Accepts `30s`, `10m`, `1h`, seconds, or `-1` for never. |
+| `MLX_VLM_MAX_NUM_SEQS` | `1` | Requests decoded at once, like `OLLAMA_NUM_PARALLEL`. Further requests queue. |
+| `PI_MLX_PORT` | `8080` | Server port. The server always binds `127.0.0.1`, so it is not reachable from other machines. Ollama keeps 11434. |
 
-The idle check runs in a small watchdog started next to the server, so it still works after Pi exits, and it exits with the server. Any mlx-vlm variable you set yourself (`MLX_VLM_*`, `APC_*`) overrides the extension's defaults. Set the variables in your shell profile (for example `export PI_MLX_KEEP_ALIVE=10m`). They take effect when the server starts, so after changing one, run `pkill -f mlx_vlm.server`; the next request starts the server again.
-
-## Catalog
-
-Only drafter repos that were checked to exist are listed:
-
-| Target | MTP drafter | DFlash drafter | Ollama tags it replaces |
-|---|---|---|---|
-| `mlx-community/Qwen3.8-27B-8bit` | `mlx-community/Qwen3.8-27B-MTP-4bit` | `z-lab/Qwen3.8-27B-DFlash2` → 4-bit | |
-| `mlx-community/Qwen3.8-27B-4bit` | `mlx-community/Qwen3.8-27B-MTP-4bit` | `z-lab/Qwen3.8-27B-DFlash2` → 4-bit | `qwen3.8:27b-mlx`, `qwen3.8:27b` |
-| `mlx-community/Qwen3.5-9B-4bit` | `mlx-community/Qwen3.5-9B-MTP-4bit` | `z-lab/Qwen3.5-9B-DFlash` → 4-bit, block 4 | `qwen3.5:9b-mlx`, `qwen3.5:9b` |
-
-Any other mlx-vlm model works with `/mlx pull <repo> dflash --draft <drafter-repo>` (or `mtp`).
+Any other mlx-vlm variable you set (`MLX_VLM_*`, `APC_*`) is passed through and overrides the extension's defaults.
 
 ## Files
 
 | Path | Contents |
 |---|---|
-| `~/.pi/agent/mlx-vlm.json` | Pulled pairings (the source of the `/model` list) |
+| `~/.pi/agent/mlx-vlm.json` | Pulled models and drafters (the source of the `/model` list) |
 | `~/.pi/agent/mlx-vlm/drafters/` | 4-bit converted DFlash drafters |
-| `~/.pi/agent/mlx-vlm/server.log` | mlx-vlm server log |
-| `~/.cache/huggingface/` | Model weights, shared with other HF tools |
+| `~/.pi/agent/mlx-vlm/server.log` | Server log, with per-request tok/s |
+| `~/.cache/huggingface/` | Model weights, shared with other Hugging Face tools |
 
-## Safety
-
-- The server always runs with `--host 127.0.0.1` (mlx-vlm's default is `0.0.0.0`). Nothing listens beyond localhost, so no API key is needed.
-- Installs run only after a confirm prompt. Nothing is deleted, and Ollama is untouched.
-
-## Develop
-
-```sh
-npm install
-npm test            # unit tests + fake mlx-vlm server + fake Pi
-npm run typecheck   # against @earendil-works/pi-coding-agent types
-npm run e2e         # real Pi + mlx-vlm + Ollama, fresh agent dir
-npm run bench       # Ollama vs mlx-vlm / MTP / DFlash, writes bench/results.json
-node bench/chart.ts # redraws docs/speed-*.html from results.json
-```
-
-Design notes, Phase 0 findings and known gaps: [NOTES.md](NOTES.md).
+Design notes, measurements, known gaps and development commands: [NOTES.md](NOTES.md).

@@ -1,4 +1,4 @@
-// pi-mlx-vlm: "mlx" Pi provider backed by one local mlx-vlm server on 127.0.0.1; each pulled model+drafter pairing is a /model entry, the drafter is switched at runtime before each request, and /mlx setup|pull|status|unload manage it.
+// pi-mlx-vlm: "mlx" Pi provider backed by one local mlx-vlm server on 127.0.0.1; each pulled model+drafter pairing is a /model entry, the drafter is switched at runtime before each request, and /mlx model|pull|status|unload manage it.
 import type { ExtensionAPI, ExtensionContext, ProviderModelConfig } from "@earendil-works/pi-coding-agent";
 import { spawn } from "node:child_process";
 import { closeSync, existsSync, mkdirSync, openSync, readFileSync, writeFileSync } from "node:fs";
@@ -19,10 +19,10 @@ type Method = "mtp" | "dflash";
 type ChatModel = Extract<ProviderModelConfig, { reasoning: boolean }> & { samplingParamsByThinkingLevel?: Record<string, Record<string, unknown>> };
 export type Entry = { id: string; target: string; draft: string | null; kind: Method | null; family: string };
 
-export const KNOWN: Record<string, { family: string; mtp?: string; dflash?: string; block?: number; ollama?: string[] }> = {
+export const KNOWN: Record<string, { family: string; mtp?: string; dflash?: string; block?: number }> = {
   "mlx-community/Qwen3.8-27B-8bit": { family: "qwen3.8", mtp: "mlx-community/Qwen3.8-27B-MTP-4bit", dflash: "z-lab/Qwen3.8-27B-DFlash2" },
-  "mlx-community/Qwen3.8-27B-4bit": { family: "qwen3.8", mtp: "mlx-community/Qwen3.8-27B-MTP-4bit", dflash: "z-lab/Qwen3.8-27B-DFlash2", ollama: ["qwen3.8:27b-mlx", "qwen3.8:27b"] },
-  "mlx-community/Qwen3.5-9B-4bit": { family: "qwen3.5", mtp: "mlx-community/Qwen3.5-9B-MTP-4bit", dflash: "z-lab/Qwen3.5-9B-DFlash", block: 4, ollama: ["qwen3.5:9b-mlx", "qwen3.5:9b"] },
+  "mlx-community/Qwen3.8-27B-4bit": { family: "qwen3.8", mtp: "mlx-community/Qwen3.8-27B-MTP-4bit", dflash: "z-lab/Qwen3.8-27B-DFlash2" },
+  "mlx-community/Qwen3.5-9B-4bit": { family: "qwen3.5", mtp: "mlx-community/Qwen3.5-9B-MTP-4bit", dflash: "z-lab/Qwen3.5-9B-DFlash", block: 4 },
 };
 
 const QWEN = { input: ["text", "image"], contextWindow: 262144 } satisfies Partial<ChatModel>;
@@ -41,12 +41,12 @@ const FAMILIES: Record<string, Pick<ChatModel, "input" | "contextWindow" | "thin
   },
   default: { input: ["text"], contextWindow: 32768, thinkingLevelMap: ON_OFF },
 };
-const LABEL = { mtp: "MTP", dflash: "DFlash" };
+const drafter = (kind: Method | null, repo?: string | null) => (!kind ? "no drafter" : kind === "mtp" ? "MTP" : /DFlash2/.test(repo ?? "") ? "DFlash2" : "DFlash");
 
 export const toModels = (entries: Entry[]): ChatModel[] =>
   entries.map((e) => ({
     id: e.id,
-    name: `${basename(e.target)} ${e.kind ? LABEL[e.kind] : "no drafter"}`,
+    name: `${basename(e.target)} ${drafter(e.kind, e.draft)}`,
     reasoning: true,
     cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
     maxTokens: 32768,
@@ -91,9 +91,6 @@ export function parsePullArgs(text: string) {
   return { target, methods: methods.length ? methods : (["mtp", "dflash"] as Method[]), draft };
 }
 
-export const fromOllama = (list: string) =>
-  list.split("\n").slice(1).map((line) => line.split(/\s+/)[0]).flatMap((tag) => Object.keys(KNOWN).filter((k) => KNOWN[k].ollama?.includes(tag)));
-
 export const serverArgs = () => ["--host", HOST, "--port", String(PORT)];
 export const SERVER_ENV = { APC_ENABLED: "1", APC_DISK_ENABLED: "0", MLX_VLM_MAX_NUM_SEQS: "1" };
 export const keepAlive = (v = process.env.PI_MLX_KEEP_ALIVE) => {
@@ -114,12 +111,14 @@ async function api(path: string, init: RequestInit = {}) {
 
 const say = (ctx: ExtensionContext, msg: string, type: "info" | "warning" | "error" = "info") => (ctx.hasUI ? ctx.ui.notify(msg, type) : console.log(msg));
 const up = () => api("/health").then(() => true, () => false);
-const USAGE = "/mlx setup [repo] | pull <repo> [mtp|dflash] [--draft <repo>] | status | unload";
+const USAGE = "/mlx model | pull <repo> [mtp|dflash] [--draft <repo>] | status | unload";
 
 async function ensureServer(ctx: ExtensionContext) {
-  if (await up()) return;
+  const health = await fetch(`${SERVER}/health`, { signal: AbortSignal.timeout(3_000) }).catch(() => undefined);
+  if (health?.ok) return;
+  if (health) throw new Error(`port ${PORT} is used by another app. Set PI_MLX_PORT to a free port`);
   const exe = bin("mlx_vlm.server");
-  if (!exe) throw new Error("mlx_vlm.server not found. Run /mlx setup");
+  if (!exe) throw new Error("mlx_vlm.server not found. Run /mlx model");
   mkdirSync(HOME, { recursive: true });
   const log = openSync(LOG, "a");
   ctx.ui.setStatus("mlx", "mlx: starting server");
@@ -129,11 +128,11 @@ async function ensureServer(ctx: ExtensionContext) {
   if (server.pid && idle >= 0) spawn(process.execPath, [WATCHDOG, SERVER, String(server.pid), String(idle)], { detached: true, stdio: "ignore" }).on("error", () => {}).unref();
   closeSync(log);
   try {
-    for (let i = 0; i < 240; i++) {
+    for (let i = 0; i < 240 && server.exitCode === null; i++) {
       if (await up()) return;
       await new Promise((r) => setTimeout(r, 500));
     }
-    throw new Error(`mlx-vlm server did not start; see ${LOG}`);
+    throw new Error(`mlx-vlm server did not start on port ${PORT}; see ${LOG}`);
   } finally {
     ctx.ui.setStatus("mlx", undefined);
   }
@@ -151,16 +150,27 @@ export default function (pi: ExtensionAPI) {
 
   async function run(ctx: ExtensionContext, cmd: string, args: string[]) {
     const exe = bin(cmd);
-    if (!exe) throw new Error(`${cmd} not found. Run /mlx setup`);
+    if (!exe) throw new Error(`${cmd} not found. Run /mlx model`);
     ctx.ui.setStatus("mlx", `mlx: ${cmd} ${args[1] ?? args[0]}`);
     const res = await pi.exec(exe, args).finally(() => ctx.ui.setStatus("mlx", undefined));
     if (res.code !== 0) throw new Error(`${cmd} ${args.join(" ")} failed:\n${(res.stderr || res.stdout).slice(-800)}`);
+  }
+
+  async function ensureTools(ctx: ExtensionContext) {
+    if (bin("mlx_vlm.server") && bin("hf")) return true;
+    const install = "uv tool install mlx-vlm && uv tool install huggingface_hub";
+    if (!bin("uv")) throw new Error("uv not found. Install uv (brew install uv), then retry");
+    if (!ctx.hasUI) throw new Error(`mlx-vlm is not installed. Run: ${install}`);
+    if (!(await ctx.ui.confirm("Install mlx-vlm?", `Runs: ${install}`))) return false;
+    for (const pkg of ["mlx-vlm", "huggingface_hub"]) await run(ctx, "uv", ["tool", "install", pkg]);
+    return true;
   }
 
   const commands: Record<string, (args: string, ctx: ExtensionContext) => Promise<unknown>> = {
     async pull(args, ctx) {
       const p = parsePullArgs(args);
       if (!p) return say(ctx, `usage: ${USAGE}`, "warning");
+      if (!(await ensureTools(ctx))) return;
       const plan = planPull(p.target, p.methods, p.draft);
       for (const w of plan.warnings) say(ctx, w, "warning");
       for (const [cmd, a] of plan.steps) await run(ctx, cmd, a);
@@ -170,20 +180,16 @@ export default function (pi: ExtensionAPI) {
       register();
       say(ctx, `Added ${plan.entries.map((e) => `mlx/${e.id}`).join(", ")}. Switch with /model.`);
     },
-    async setup(args, ctx) {
-      if (!bin("mlx_vlm.server") || !bin("hf")) {
-        const install = "uv tool install mlx-vlm && uv tool install huggingface_hub";
-        if (!bin("uv")) throw new Error(`uv not found. Install uv (brew install uv), then rerun /mlx setup`);
-        if (!ctx.hasUI) throw new Error(`mlx-vlm is not installed. Run: ${install}`);
-        if (!(await ctx.ui.confirm("Install mlx-vlm?", `Runs: ${install}`))) return;
-        for (const pkg of ["mlx-vlm", "huggingface_hub"]) await run(ctx, "uv", ["tool", "install", pkg]);
-      }
-      const ollama = bin("ollama");
-      const tags = ollama ? (await pi.exec(ollama, ["list"])).stdout : "";
-      const options = [...new Set([...fromOllama(tags), ...Object.keys(KNOWN)])];
-      const target = args.trim() || (ctx.hasUI ? await ctx.ui.select("Pull which MLX model? (matches for your Ollama models first)", options) : options[0]);
+    async model(_, ctx) {
+      const installed = new Set(load().map((m) => m.target));
+      const targets = [...new Set([...Object.keys(KNOWN), ...installed])];
+      const kinds = (t: string) => (["mtp", "dflash"] as Method[]).filter((m) => KNOWN[t]?.[m]).map((m) => drafter(m, KNOWN[t][m])).join(" + ") || "custom";
+      const labels = targets.map((t) => `${t}  ${kinds(t)}${installed.has(t) ? "  ✓ installed" : ""}`);
+      if (!ctx.hasUI) return say(ctx, [...labels, "Pick one with /mlx model in Pi, or run /mlx pull <repo>."].join("\n"));
+      const target = targets[labels.indexOf((await ctx.ui.select("MLX models: Enter pulls or switches", labels)) ?? "")];
       if (!target) return;
-      await commands.pull(target, ctx);
+      if (!installed.has(target)) await commands.pull(target, ctx);
+      if (!load().some((m) => m.target === target)) return;
       await ensureServer(ctx);
       const model = [`${target}@dflash`, `${target}@mtp`, target].map((id) => ctx.modelRegistry.find("mlx", id)).find(Boolean);
       if (model && (await pi.setModel(model))) say(ctx, `Now using mlx/${model.id}. Ctrl+S in /model makes it the default.`);

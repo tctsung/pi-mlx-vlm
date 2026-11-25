@@ -1,4 +1,4 @@
-// Renders bench/results.json into two diagram-design bar charts (decode tok/s, Pi task seconds) as HTML + SVG in docs/, and rewrites the README speed section with a summary table.
+// Renders a bench results JSON (default bench/results.json) into two diagram-design bar charts, decode tok/s and Pi task seconds, as HTML + SVG next to it in bench/.
 import { readFileSync, writeFileSync } from "node:fs";
 
 const C = { paper: "#f5f5f5", ink: "#2d3142", muted: "#4f5d75", accent: "#bf4520", series: "#7c8f6f" };
@@ -55,8 +55,8 @@ function chart(slug: string, title: string, desc: string, axis: string, cats: st
   <rect width="100%" height="100%" fill="url(#${slug}-dots)" opacity="0.55"/>
   ${out.join("\n  ")}
 </svg>`;
-  writeFileSync(`docs/${slug}.svg`, svg + "\n");
-  writeFileSync(`docs/${slug}.html`, `<!DOCTYPE html>
+  writeFileSync(`bench/${slug}.svg`, svg + "\n");
+  writeFileSync(`bench/${slug}.html`, `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -107,23 +107,3 @@ const n = (rows: any[]) => rows[0].runs.length;
 chart("speed-decode", "Decode speed, tokens per second", `Mean streamed decode speed per engine and thinking level over ${n(results.decode)} sampled 512-token generations; higher is better.`, "TOKENS / SECOND", labels, decode, solo(decode, Math.max), (v) => v.toFixed(1));
 chart("speed-task", "Pi agent task, seconds end to end", `Mean wall time for one Pi coding task (write fib.py plus unittest, run tests) per engine and thinking level over ${n(results.tasks)} runs; lower is better.`, "SECONDS", labels, tasks, solo(tasks, Math.min), (v) => `${v.toFixed(0)}s`);
 
-const rows = labels.map((l, i) => {
-  const d = decode.map((s) => `${s.values[i].toFixed(1)} (${(s.values[i] / s.values[0]).toFixed(2)}×)`);
-  const t = tasks.map((s) => `${s.values[i].toFixed(0)} s`);
-  const runs = results.tasks.filter((r: any) => r.label === l).flatMap((r: any) => r.runs);
-  return `| ${l} | ${[...d, ...t].join(" | ")} | ${runs.filter((r: any) => r.ok).length}/${runs.length} |`;
-});
-const heads = [...levels.map((lv) => `Decode tok/s, ${(NAMES[lv] ?? lv).toLowerCase()}`), ...levels.map((lv) => `Pi task, ${(NAMES[lv] ?? lv).toLowerCase()}`)];
-const section = `<!-- bench:start -->
-![Decode speed](docs/speed-decode.svg)
-
-![Pi agent task time](docs/speed-task.svg)
-
-| Engine | ${heads.join(" | ")} | Task tests passed |
-|---|${heads.map(() => "---|").join("")}---|
-${rows.join("\n")}
-
-${results.machine}, \`${results.mlx}\` on mlx-vlm vs \`${results.ollama}\` on Ollama, ${results.date.slice(0, 10)}. Decode: mean of ${n(results.decode)} streamed 512-token generations (3 prompts) with Qwen's sampling for each mode; × is relative to Ollama. Pi task: \`${results.task}\`, mean of ${n(results.tasks)} runs of \`pi -p\` with prefix caching on for both engines. Raw numbers in [bench/results.json](bench/results.json).
-<!-- bench:end -->`;
-const readme = readFileSync("README.md", "utf8");
-writeFileSync("README.md", readme.replace(/<!-- bench:start -->[\s\S]*<!-- bench:end -->/, section));
