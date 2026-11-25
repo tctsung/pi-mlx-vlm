@@ -1,8 +1,8 @@
-// End-to-end check with real Pi, mlx-vlm and Ollama: fresh agent dir, pi install, /mlx model over RPC (confirm install, Enter on the catalog name), chat on @mtp/@dflash, switch to ollama and back without restart, thinking levels, loopback-only listener.
+// End-to-end check with real Pi, mlx-vlm and Ollama: fresh agent dir, pi install, pi-mlx pull (reusing ~/.pi/agent/mlx-vlm/models), Pi over RPC: models appear live, chat on @mtp/@dflash, switch to ollama and back without restart, thinking levels, loopback-only listener.
 import assert from "node:assert/strict";
 import { execFileSync, spawn } from "node:child_process";
 import { mkdtempSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { homedir, tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { createInterface } from "node:readline";
 
@@ -11,7 +11,7 @@ const OLLAMA = process.env.E2E_OLLAMA ?? "qwen3.5:9b-mlx";
 const PORT = process.env.PI_MLX_PORT ?? "8080";
 const repo = join(dirname(new URL(import.meta.url).pathname), "..");
 const agentDir = mkdtempSync(join(tmpdir(), "pi-e2e-agent-"));
-const env = { ...process.env, PI_CODING_AGENT_DIR: agentDir };
+const env = { ...process.env, PI_CODING_AGENT_DIR: agentDir, PI_MLX_MODELS: process.env.PI_MLX_MODELS ?? join(homedir(), ".pi", "agent", "mlx-vlm", "models") };
 writeFileSync(join(agentDir, "models.json"), JSON.stringify({
   providers: { ollama: { baseUrl: "http://127.0.0.1:11434/v1", api: "openai-completions", apiKey: "ollama", models: [{ id: OLLAMA, reasoning: true }] } },
 }));
@@ -25,8 +25,6 @@ createInterface({ input: pi.stdout! }).on("line", (line) => {
   const e = JSON.parse(line);
   if (e.type === "extension_ui_request") {
     if (e.method === "notify") notes.push(e.message), console.log("  notify:", e.message);
-    if (e.method === "confirm") send({ type: "extension_ui_response", id: e.id, confirmed: true });
-    if (e.method === "select") send({ type: "extension_ui_response", id: e.id, value: e.options.find((o: string) => o.startsWith(`${TARGET} `)) });
   }
   for (const w of [...waiters]) if (w.match(e)) waiters.splice(waiters.indexOf(w), 1), w.done(e);
 });
@@ -53,12 +51,11 @@ const ask = async (message: string) => {
 };
 const step = (name: string) => console.log(`- ${name}`);
 
-step("/mlx model");
-const picked = next((e) => e.type === "extension_ui_request" && e.method === "notify" && /Now using mlx\//.test(e.message));
-await call({ type: "prompt", message: "/mlx model" });
-await picked;
+step("pi-mlx pull while Pi runs");
+execFileSync(process.execPath, [join(repo, "bin", "pi-mlx.mjs"), "pull", TARGET], { env, stdio: "inherit" });
+await new Promise((r) => setTimeout(r, 4000));
 
-step("pulled pairings show up as models");
+step("pulled pairings show up as models without a restart");
 const ids = (await call({ type: "get_available_models" })).data.models.map((m: any) => `${m.provider}/${m.id}`);
 for (const id of [`mlx/${TARGET}`, `mlx/${TARGET}@mtp`, `mlx/${TARGET}@dflash`, `ollama/${OLLAMA}`]) assert.ok(ids.includes(id), `${id} missing in ${ids}`);
 

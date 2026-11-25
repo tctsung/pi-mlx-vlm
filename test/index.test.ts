@@ -1,9 +1,9 @@
-// Tests for pi-mlx-vlm: pure catalog/pull logic, plus the extension wired to a fake Pi and a fake mlx-vlm server.
+// Tests for pi-mlx-vlm: shared catalog/pull-plan logic, plus the Pi extension wired to a fake Pi and a fake mlx-vlm server.
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createServer } from "node:http";
 import { spawn } from "node:child_process";
-import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { AddressInfo } from "node:net";
@@ -35,7 +35,8 @@ await new Promise<void>((r) => fake.listen(0, "127.0.0.1", r));
 process.env.PI_MLX_PORT = String((fake.address() as AddressInfo).port);
 process.env.PI_CODING_AGENT_DIR = mkdtempSync(join(tmpdir(), "pi-mlx-"));
 const mod = await import("../src/index.ts");
-const { CATALOG, known, toModels, planPull, serverArgs, parsePullArgs, SERVER_ENV, setBlock, keepAlive, WATCHDOG } = mod;
+const { toModels, serverArgs, SERVER_ENV, keepAlive, WATCHDOG } = mod;
+const { CATALOG, known, planPull, parsePullArgs, setBlock } = await import("../src/models.mjs");
 test.after(() => fake.close());
 
 const Q35 = "mlx-community/Qwen3.5-9B-4bit";
@@ -43,7 +44,7 @@ const Q38 = "mlx-community/Qwen3.8-27B-8bit";
 
 test("catalog: easy names for Qwen3.8, Qwen3.5, Gemma 4, LFM, each with a repo, size and verified drafters", () => {
   for (const family of ["qwen3.8-", "qwen3.5-", "gemma4-", "lfm3-", "lfm3-vl-", "lfm2.5-"]) assert.ok(Object.keys(CATALOG).some((n) => n.startsWith(family)), family);
-  for (const [name, k] of Object.entries(CATALOG)) assert.ok(k.repo.includes("/") && k.gb! > 0, name);
+  for (const [name, k] of Object.entries<any>(CATALOG)) assert.ok(k.repo.includes("/") && k.gb > 0, name);
   assert.equal(CATALOG["qwen3.8-27b"].dflash2, "z-lab/Qwen3.8-27B-DFlash2");
   assert.equal(CATALOG["qwen3.8-27b-8bit"].repo, Q38);
   assert.equal(CATALOG["qwen3.5-9b"].mtp, "mlx-community/Qwen3.5-9B-MTP-4bit");
@@ -125,28 +126,32 @@ test("each pulled pairing becomes its own model with the family thinking map", (
   assert.ok(models.every((m) => m.reasoning && m.cost.input === 0));
 });
 
-test("pull plan by easy name: every catalog drafter, DFlash converted to 4-bit once, MTP and DSpark downloaded", () => {
-  const plan = planPull("qwen3.5-9b", [], undefined, "/drafters");
-  assert.deepEqual(plan.steps, [
-    ["hf", ["download", Q35]],
-    ["mlx_vlm.convert", ["--hf-path", "z-lab/Qwen3.5-9B-DFlash", "--mlx-path", "/drafters/Qwen3.5-9B-DFlash-4bit", "--quantize", "--q-bits", "4", "--q-group-size", "64"]],
-    ["hf", ["download", "mlx-community/Qwen3.5-9B-MTP-4bit"]],
+test("pull plan saves into the models folder: every catalog drafter, DFlash downloaded to a temp dir and converted to 4-bit once", () => {
+  const tmp = join(tmpdir(), "pi-mlx", "Qwen3.5-9B-DFlash");
+  const plan = planPull("qwen3.5-9b", [], undefined, "/m");
+  assert.deepEqual(plan.steps.map((s) => [s.cmd, ...s.args]), [
+    ["hf", "download", Q35, "--local-dir", `/m/${Q35}`],
+    ["hf", "download", "z-lab/Qwen3.5-9B-DFlash", "--local-dir", tmp],
+    ["mlx_vlm.convert", "--hf-path", tmp, "--mlx-path", "/m/z-lab/Qwen3.5-9B-DFlash-4bit", "--quantize", "--q-bits", "4", "--q-group-size", "64"],
+    ["hf", "download", "mlx-community/Qwen3.5-9B-MTP-4bit", "--local-dir", "/m/mlx-community/Qwen3.5-9B-MTP-4bit"],
   ]);
-  assert.deepEqual(plan.entries.map((e) => [e.id, e.draft, e.kind]), [
-    ["qwen3.5-9b", null, null],
-    ["qwen3.5-9b@dflash", "/drafters/Qwen3.5-9B-DFlash-4bit", "dflash"],
-    ["qwen3.5-9b@mtp", "mlx-community/Qwen3.5-9B-MTP-4bit", "mtp"],
+  assert.match(plan.steps[0].label, /6 GB/);
+  assert.deepEqual(plan.entries.map((e) => [e.id, e.path, e.draft, e.kind]), [
+    ["qwen3.5-9b", `/m/${Q35}`, null, null],
+    ["qwen3.5-9b@dflash", `/m/${Q35}`, "/m/z-lab/Qwen3.5-9B-DFlash-4bit", "dflash"],
+    ["qwen3.5-9b@mtp", `/m/${Q35}`, "/m/mlx-community/Qwen3.5-9B-MTP-4bit", "mtp"],
   ]);
+  assert.deepEqual(plan.cleanup, [tmp]);
   assert.deepEqual(plan.warnings, []);
-  assert.deepEqual(plan.block, { path: "/drafters/Qwen3.5-9B-DFlash-4bit", size: 4 });
-  assert.deepEqual(planPull(Q35, ["mtp"], undefined, "/d").entries.map((e) => e.id), ["qwen3.5-9b", "qwen3.5-9b@mtp"]);
-  const q38 = planPull("qwen3.8-27b", ["dflash2"], undefined, "/d");
-  assert.deepEqual(q38.entries[1], { id: "qwen3.8-27b@dflash2", target: "mlx-community/Qwen3.8-27B-4bit", draft: "/d/Qwen3.8-27B-DFlash2-4bit", kind: "dflash", family: "qwen3.8" });
+  assert.deepEqual(plan.block, { path: "/m/z-lab/Qwen3.5-9B-DFlash-4bit", size: 4 });
+  assert.deepEqual(planPull(Q35, ["mtp"], undefined, "/m").entries.map((e) => e.id), ["qwen3.5-9b", "qwen3.5-9b@mtp"]);
+  const q38 = planPull("qwen3.8-27b", ["dflash2"], undefined, "/m");
+  assert.deepEqual(q38.entries[1], { id: "qwen3.8-27b@dflash2", target: "mlx-community/Qwen3.8-27B-4bit", path: "/m/mlx-community/Qwen3.8-27B-4bit", draft: "/m/z-lab/Qwen3.8-27B-DFlash2-4bit", kind: "dflash", family: "qwen3.8" });
   assert.equal(q38.block, undefined);
-  const lfm = planPull("lfm2.5-2.6b", [], undefined, "/d");
-  assert.deepEqual(lfm.steps, [["hf", ["download", "LiquidAI/LFM2.5-2.6B"]], ["hf", ["download", "LiquidAI/LFM2.5-2.6B-DSpark"]]]);
-  assert.deepEqual(lfm.entries[1], { id: "lfm2.5-2.6b@dspark", target: "LiquidAI/LFM2.5-2.6B", draft: "LiquidAI/LFM2.5-2.6B-DSpark", kind: "dflash", family: "default" });
-  assert.deepEqual(planPull("lfm3-1.7b", [], undefined, "/d").entries.map((e) => e.id), ["lfm3-1.7b"]);
+  const lfm = planPull("lfm2.5-2.6b", [], undefined, "/m");
+  assert.deepEqual(lfm.steps.map((s) => s.args[1]), ["LiquidAI/LFM2.5-2.6B", "LiquidAI/LFM2.5-2.6B-DSpark"]);
+  assert.deepEqual(lfm.entries[1], { id: "lfm2.5-2.6b@dspark", target: "LiquidAI/LFM2.5-2.6B", path: "/m/LiquidAI/LFM2.5-2.6B", draft: "/m/LiquidAI/LFM2.5-2.6B-DSpark", kind: "dflash", family: "default" });
+  assert.deepEqual(planPull("lfm3-1.7b", [], undefined, "/m").entries.map((e) => e.id), ["lfm3-1.7b"]);
 });
 
 test("DFlash block size is written into the converted drafter config", () => {
@@ -158,6 +163,7 @@ test("DFlash block size is written into the converted drafter config", () => {
 
 test("unknown model needs --draft, otherwise only the plain entry is added", () => {
   const bare = planPull("someone/Model-4bit", [], undefined, "/d");
+  assert.equal(bare.entries[0].path, "/d/someone/Model-4bit");
   assert.deepEqual(bare.entries.map((e) => e.id), ["someone/Model-4bit"]);
   assert.match(bare.warnings.join(), /not in the catalog/);
   assert.equal(planPull("someone/Model-4bit", ["mtp", "dflash"], undefined, "/d").warnings.length, 2);
@@ -174,48 +180,23 @@ test("pull args parse name or repo, methods and --draft", () => {
   assert.equal(parsePullArgs(""), undefined);
 });
 
-function fakePi(bins?: string) {
+function fakePi() {
   const handlers: Record<string, Function> = {};
   const providers: [string, any][] = [];
   const commands: Record<string, any> = {};
-  const execs: string[][] = [];
   const notes: string[] = [];
   const pi = {
     on: (e: string, h: Function) => (handlers[e] = h),
     registerProvider: (n: string, c: any) => providers.push([n, c]),
     registerCommand: (n: string, o: any) => (commands[n] = o),
-    exec: async (cmd: string, args: string[]) => {
-      execs.push([cmd, ...args]);
-      if (cmd.endsWith("uv") && bins) for (const b of ["hf", "mlx_vlm.server", "mlx_vlm.convert"]) writeFileSync(join(bins, b), "");
-      if (cmd.endsWith("mlx_vlm.convert")) {
-        const out = args[args.indexOf("--mlx-path") + 1];
-        mkdirSync(out, { recursive: true });
-        writeFileSync(join(out, "config.json"), JSON.stringify({ block_size: 16 }));
-      }
-      return { code: 0, stdout: "", stderr: "", killed: false };
-    },
-    setModel: async () => true,
   };
-  const ctx = (model?: { provider: string; id: string }, hasUI = true, ui: { confirm?: boolean; select?: (t: string, o: string[]) => string | undefined } = {}) => ({
+  const ctx = (model?: { provider: string; id: string }) => ({
     model,
-    hasUI,
-    ui: { notify: (m: string) => notes.push(m), setStatus: () => {}, confirm: async () => ui.confirm ?? true, select: async (t: string, o: string[]) => ui.select?.(t, o) },
-    modelRegistry: { find: (provider: string, id: string) => ({ provider, id }) },
+    hasUI: true,
+    ui: { notify: (m: string) => notes.push(m), setStatus: () => {} },
   });
-  return { pi, handlers, providers, commands, execs, notes, ctx };
+  return { pi, handlers, providers, commands, notes, ctx };
 }
-
-const printed = async (fn: () => Promise<unknown>) => {
-  const log = console.log;
-  const out: string[] = [];
-  console.log = (m: string) => out.push(m);
-  try {
-    await fn();
-  } finally {
-    console.log = log;
-  }
-  return out.join("\n");
-};
 
 test("extension registers mlx provider on 127.0.0.1 with a dummy key and /mlx command", () => {
   const f = fakePi();
@@ -228,11 +209,12 @@ test("extension registers mlx provider on 127.0.0.1 with a dummy key and /mlx co
   assert.ok(f.commands.mlx);
 });
 
-test("before request: drafter set only when it differs, model id rewritten to target", async () => {
+test("before request: drafter set only when it differs, model id rewritten to the local path (or the repo for older pulls)", async () => {
   const dir = process.env.PI_CODING_AGENT_DIR!;
   writeFileSync(join(dir, "mlx-vlm.json"), JSON.stringify({ models: [
     { id: `${Q35}@mtp`, target: Q35, draft: "mlx-community/Qwen3.5-9B-MTP-4bit", kind: "mtp", family: "qwen3.5" },
     { id: Q35, target: Q35, draft: null, kind: null, family: "qwen3.5" },
+    { id: "qwen3.5-9b", target: Q35, path: "/m/q35", draft: null, kind: null, family: "qwen3.5" },
   ] }));
   const f = fakePi();
   mod.default(f.pi as any);
@@ -245,18 +227,19 @@ test("before request: drafter set only when it differs, model id rewritten to ta
   assert.equal(patches.length, 1);
   await hook({ payload: { model: Q35 } }, f.ctx({ provider: "mlx", id: Q35 }));
   assert.deepEqual(patches[1], { draft_model: null, draft_kind: null });
+  assert.equal((await hook({ payload: {} }, f.ctx({ provider: "mlx", id: "qwen3.5-9b" }))).model, "/m/q35");
   assert.equal(await hook({ payload: { model: "qwen3.5:9b-mlx" } }, f.ctx({ provider: "ollama", id: "qwen3.5:9b-mlx" })), undefined);
 });
 
-test("/mlx pull runs the plan, saves the catalog and refreshes the provider", async () => {
+test("models pulled by pi-mlx while Pi runs show up in /model without a restart", async () => {
   const f = fakePi();
   mod.default(f.pi as any);
-  await f.commands.mlx.handler(`pull ${Q35} mtp`, f.ctx());
-  assert.deepEqual(f.execs.map((e) => e.slice(1)), [["download", Q35], ["download", "mlx-community/Qwen3.5-9B-MTP-4bit"]]);
-  const ids = JSON.parse(readFileSync(join(process.env.PI_CODING_AGENT_DIR!, "mlx-vlm.json"), "utf8")).models.map((m: any) => m.id);
-  assert.deepEqual(ids.sort(), ["qwen3.5-9b", "qwen3.5-9b@mtp"], "re-pull replaces the same target+method under the easy name");
-  const last = f.providers.at(-1)![1];
-  assert.ok(last.models.some((m: any) => m.id === "qwen3.5-9b@mtp"));
+  const before = f.providers.length;
+  writeFileSync(join(process.env.PI_CODING_AGENT_DIR!, "mlx-vlm.json"), JSON.stringify({ models: [{ id: "lfm3-1.7b", target: "LiquidAI/LFM3-1.7B", path: "/m/lfm", draft: null, kind: null, family: "default" }] }));
+  await sleep(3500);
+  assert.ok(f.providers.length > before);
+  assert.deepEqual(f.providers.at(-1)![1].models.map((m: any) => m.id), ["lfm3-1.7b"]);
+  f.handlers.session_shutdown?.();
 });
 
 test("/mlx status and unload talk to the server", async () => {
@@ -271,11 +254,10 @@ test("/mlx status and unload talk to the server", async () => {
 test("a port that accepts but stalls is treated as a busy mlx-vlm, so no second server starts", async () => {
   const hung = createServer(() => {});
   await new Promise<void>((r) => hung.listen(0, "127.0.0.1", r));
-  const dir = mkdtempSync(join(tmpdir(), "pi-mlx-hung-"));
-  writeFileSync(join(dir, "mlx-vlm.json"), JSON.stringify({ models: [{ id: Q35, target: Q35, draft: null, kind: null, family: "qwen3.5" }] }));
-  const env = { PI_MLX_PORT: process.env.PI_MLX_PORT!, PI_CODING_AGENT_DIR: process.env.PI_CODING_AGENT_DIR! };
+  writeFileSync(join(process.env.PI_CODING_AGENT_DIR!, "mlx-vlm.json"), JSON.stringify({ models: [{ id: Q35, target: Q35, draft: null, kind: null, family: "qwen3.5" }] }));
+  const env = { PI_MLX_PORT: process.env.PI_MLX_PORT! };
   try {
-    Object.assign(process.env, { PI_MLX_PORT: String((hung.address() as AddressInfo).port), PI_CODING_AGENT_DIR: dir });
+    process.env.PI_MLX_PORT = String((hung.address() as AddressInfo).port);
     const url = "../src/index.ts?hung";
     const f = fakePi();
     (await import(url)).default(f.pi as any);
@@ -292,8 +274,8 @@ test("a port held by another app: mlx-vlm moves to a free port at session start 
   const other = createServer((_, res) => ((res.statusCode = 404), res.end("not mlx-vlm")));
   await new Promise<void>((r) => other.listen(0, "127.0.0.1", r));
   const busy = (other.address() as AddressInfo).port;
-  const dir = mkdtempSync(join(tmpdir(), "pi-mlx-port-"));
-  mkdirSync(join(dir, "mlx-vlm"));
+  const dir = process.env.PI_CODING_AGENT_DIR!;
+  mkdirSync(join(dir, "mlx-vlm"), { recursive: true });
   writeFileSync(join(dir, "mlx-vlm", "port"), String(busy));
   writeFileSync(join(dir, "mlx-vlm.json"), JSON.stringify({ models: [{ id: Q35, target: Q35, draft: null, kind: null, family: "qwen3.5" }] }));
   const env = { PI_MLX_PORT: process.env.PI_MLX_PORT!, PI_CODING_AGENT_DIR: process.env.PI_CODING_AGENT_DIR! };
@@ -305,7 +287,6 @@ test("a port held by another app: mlx-vlm moves to a free port at session start 
   };
   try {
     delete process.env.PI_MLX_PORT;
-    process.env.PI_CODING_AGENT_DIR = dir;
     const f = await fresh("moved");
     assert.equal(f.providers[0][1].baseUrl, `http://127.0.0.1:${busy}/v1`);
     await f.handlers.session_start({}, f.ctx());
@@ -321,54 +302,7 @@ test("a port held by another app: mlx-vlm moves to a free port at session start 
     assert.equal(Number(readFileSync(join(dir, "mlx-vlm", "port"), "utf8")), moved);
   } finally {
     Object.assign(process.env, env);
+    rmSync(join(dir, "mlx-vlm", "port"), { force: true });
     other.close();
   }
-});
-
-test("/mlx model without UI lists installed models first, then the catalog by easy name with drafters and size", async () => {
-  const f = fakePi();
-  mod.default(f.pi as any);
-  const lines = (await printed(() => f.commands.mlx.handler("model", f.ctx(undefined, false)))).split("\n");
-  const line = (n: string) => lines.find((l) => l.startsWith(`${n} `))!;
-  assert.match(lines[0], /^qwen3\.5-9b .*MTP.*✓ installed/);
-  assert.equal(lines.filter((l) => l.startsWith("qwen3.5-9b ")).length, 1);
-  assert.match(line("qwen3.8-27b"), /DFlash2 \+ MTP +16 GB/);
-  assert.match(line("lfm2.5-2.6b"), /DSpark/);
-  assert.match(line("lfm3-1.7b"), /no drafter/);
-  assert.doesNotMatch(line("gemma4-e4b"), /installed/);
-});
-
-test("/mlx model: Enter on a model pulls it once with its drafters, then just switches to the fastest entry", async () => {
-  const f = fakePi();
-  mod.default(f.pi as any);
-  const pick = { select: (_: string, o: string[]) => o.find((l) => l.startsWith("qwen3.8-27b-8bit ")) };
-  await f.commands.mlx.handler("model", f.ctx(undefined, true, pick));
-  assert.ok(f.execs.some((e) => e.slice(1).join(" ") === `download ${Q38}`), JSON.stringify(f.execs));
-  assert.match(f.notes.at(-1)!, /Now using mlx\/qwen3\.8-27b-8bit@dflash2/);
-  const pulls = f.execs.length;
-  await f.commands.mlx.handler("model", f.ctx(undefined, true, pick));
-  assert.equal(f.execs.length, pulls);
-  assert.match(f.notes.at(-1)!, /Now using/);
-});
-
-test("/mlx pull installs mlx-vlm with uv only after asking, then pulls and tunes the DFlash block", async () => {
-  const bins = mkdtempSync(join(tmpdir(), "bin-"));
-  writeFileSync(join(bins, "uv"), "");
-  const env = { HOME: process.env.HOME, PATH: process.env.PATH };
-  Object.assign(process.env, { HOME: bins, PATH: bins });
-  try {
-    const no = fakePi(bins);
-    mod.default(no.pi as any);
-    await no.commands.mlx.handler(`pull ${Q35} dflash`, no.ctx(undefined, true, { confirm: false }));
-    assert.deepEqual(no.execs, []);
-    const yes = fakePi(bins);
-    mod.default(yes.pi as any);
-    await yes.commands.mlx.handler(`pull ${Q35} dflash`, yes.ctx());
-    assert.deepEqual(yes.execs.map((e) => e.slice(1, 4).join(" ")).slice(0, 2), ["tool install mlx-vlm", "tool install huggingface_hub"]);
-    assert.ok(yes.execs.some((e) => e[0] === join(bins, "mlx_vlm.convert")));
-  } finally {
-    Object.assign(process.env, env);
-  }
-  const drafter = join(process.env.PI_CODING_AGENT_DIR!, "mlx-vlm", "drafters", "Qwen3.5-9B-DFlash-4bit", "config.json");
-  assert.equal(JSON.parse(readFileSync(drafter, "utf8")).block_size, 4);
 });

@@ -1,6 +1,6 @@
 // Draws bench/speed.svg from every bench/*.json sample file: mean decode tok/s with thinking off per model and machine, as diagram-design grouped horizontal bars (Ollama, mlx-vlm without a drafter, mlx-vlm with its fastest drafter, plus its speed-up).
 import { readdirSync, readFileSync, writeFileSync } from "node:fs";
-import { CATALOG } from "../src/index.ts";
+import { CATALOG } from "../src/models.mjs";
 
 const C = { paper: "#f5f5f5", ink: "#2d3142", muted: "#4f5d75", accent: "#bf4520", ollama: "#7c8f6f" };
 const MONO = "'Geist Mono', ui-monospace, monospace";

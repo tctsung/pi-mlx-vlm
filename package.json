@@ -1,12 +1,22 @@
 {
   "name": "pi-mlx-vlm",
   "version": "0.1.0",
-  "description": "Pi provider for local MLX models via mlx-vlm, with MTP and DFlash speculative decoding",
+  "description": "Pi provider for local MLX models via mlx-vlm, with MTP, DFlash and DSpark speculative decoding, and the pi-mlx CLI to pull models",
   "type": "module",
   "license": "MIT",
-  "keywords": ["pi-package", "mlx", "mlx-vlm", "speculative-decoding", "dflash", "mtp", "ollama"],
+  "keywords": [
+    "pi-package",
+    "mlx",
+    "mlx-vlm",
+    "speculative-decoding",
+    "dflash",
+    "mtp",
+    "ollama"
+  ],
   "pi": {
-    "extensions": ["./src/index.ts"]
+    "extensions": [
+      "./src/index.ts"
+    ]
   },
   "engines": {
     "node": ">=22.19.0"
@@ -24,5 +34,19 @@
     "@earendil-works/pi-coding-agent": "^1.6.0",
     "@types/node": "^22.0.0",
     "typescript": "^5.9.0"
-  }
+  },
+  "bin": {
+    "pi-mlx": "bin/pi-mlx.mjs"
+  },
+  "peerDependenciesMeta": {
+    "@earendil-works/pi-coding-agent": {
+      "optional": true
+    }
+  },
+  "files": [
+    "src",
+    "bin",
+    "catalog.json",
+    "README.md"
+  ]
 }

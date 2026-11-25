@@ -4,7 +4,8 @@ import { existsSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { homedir, tmpdir, totalmem } from "node:os";
 import { join } from "node:path";
 import { parseArgs } from "node:util";
-import { known, toModels } from "../src/index.ts";
+import { toModels } from "../src/index.ts";
+import { known } from "../src/models.mjs";
 
 const { values: opt } = parseArgs({
   options: {
@@ -29,7 +30,7 @@ if (!pairs.length) throw new Error(`${model} is not pulled; run /mlx pull ${mode
 type Config = { config: string; base: string; model: string; pi: string; draft?: { draft_model: string | null; draft_kind: string | null } };
 const configs: Config[] = [
   ...(opt.ollama ? [{ config: "ollama", base: OLLAMA, model: opt.ollama, pi: `ollama/${opt.ollama}` }] : []),
-  ...pairs.map((e: any) => ({ config: e.id.split("@")[1] ?? "none", base: MLX, model: e.target, pi: `mlx/${e.id}`, draft: { draft_model: e.draft, draft_kind: e.kind } })),
+  ...pairs.map((e: any) => ({ config: e.id.split("@")[1] ?? "none", base: MLX, model: e.path ?? e.target, pi: `mlx/${e.id}`, draft: { draft_model: e.draft, draft_kind: e.kind } })),
 ];
 
 const PROMPTS = [
