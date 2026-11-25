@@ -2,6 +2,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createServer } from "node:http";
+import { spawn } from "node:child_process";
 import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -9,6 +10,8 @@ import type { AddressInfo } from "node:net";
 
 const settings: Record<string, unknown> = { draft_model: null, draft_kind: null };
 const patches: unknown[] = [];
+const metrics = { summary: { in_flight: 1, last_request_at: 0 }, server: { loaded_model: "m" as string | null } };
+let unloads = 0;
 const fake = createServer((req, res) => {
   let body = "";
   req.on("data", (c) => (body += c));
@@ -22,7 +25,8 @@ const fake = createServer((req, res) => {
       Object.assign(settings, p);
       return res.end(JSON.stringify({ applied: p, rejected: [], current: settings }));
     }
-    if (req.url === "/unload") return res.end(JSON.stringify({ status: "success" }));
+    if (req.url === "/metrics") return res.end(JSON.stringify(metrics));
+    if (req.url === "/unload") return unloads++, res.end(JSON.stringify({ status: "success" }));
     res.statusCode = 404;
     res.end("{}");
   });
@@ -31,7 +35,7 @@ await new Promise<void>((r) => fake.listen(0, "127.0.0.1", r));
 process.env.PI_MLX_PORT = String((fake.address() as AddressInfo).port);
 process.env.PI_CODING_AGENT_DIR = mkdtempSync(join(tmpdir(), "pi-mlx-"));
 const mod = await import("../src/index.ts");
-const { KNOWN, toModels, planPull, fromOllama, serverArgs, parsePullArgs, SERVER_ENV, setBlock } = mod;
+const { KNOWN, toModels, planPull, fromOllama, serverArgs, parsePullArgs, SERVER_ENV, setBlock, keepAlive, WATCHDOG } = mod;
 test.after(() => fake.close());
 
 const Q35 = "mlx-community/Qwen3.5-9B-4bit";
@@ -52,9 +56,41 @@ test("server always binds loopback and never pins a drafter at startup", () => {
   assert.ok(!args.includes("0.0.0.0"));
 });
 
-test("server keeps an in-memory prefix cache so agent turns skip re-prefill, never on disk", () => {
-  assert.equal(SERVER_ENV.APC_ENABLED, "1");
-  assert.equal(SERVER_ENV.APC_DISK_ENABLED, "0");
+test("server defaults: in-memory prefix cache (never disk), one sequence at a time like OLLAMA_NUM_PARALLEL", () => {
+  assert.deepEqual(SERVER_ENV, { APC_ENABLED: "1", APC_DISK_ENABLED: "0", MLX_VLM_MAX_NUM_SEQS: "1" });
+});
+
+test("keep-alive uses Ollama's duration format, default 5m, negative means never", () => {
+  assert.equal(keepAlive(undefined), 300);
+  assert.equal(keepAlive("10m"), 600);
+  assert.equal(keepAlive("90"), 90);
+  assert.equal(keepAlive("2h"), 7200);
+  assert.equal(keepAlive("0"), 0);
+  assert.equal(keepAlive("-1"), -1);
+  assert.equal(keepAlive("soon"), 300);
+});
+
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+test("watchdog unloads only when idle with nothing in flight, and exits when the server is gone", async () => {
+  const base = `http://127.0.0.1:${process.env.PI_MLX_PORT}`;
+  const dog = spawn(process.execPath, [WATCHDOG, base, String(process.pid), "0"], { stdio: "inherit" });
+  const before = unloads;
+  await sleep(2500);
+  assert.equal(unloads, before, "busy server must not be unloaded");
+  metrics.summary.in_flight = 0;
+  await sleep(2500);
+  assert.ok(unloads > before, "idle server should be unloaded");
+  metrics.server.loaded_model = null;
+  const after = unloads;
+  await sleep(1500);
+  assert.equal(unloads, after, "nothing loaded, nothing to unload");
+  dog.kill();
+  const dead = spawn(process.execPath, ["-e", ""]);
+  await new Promise((r) => dead.on("exit", r));
+  const orphan = spawn(process.execPath, [WATCHDOG, base, String(dead.pid), "0"]);
+  const code = await Promise.race([new Promise((r) => orphan.on("exit", r)), sleep(3000).then(() => "still running")]);
+  orphan.kill();
+  assert.equal(code, 0);
 });
 
 test("each pulled pairing becomes its own model with the family thinking map", () => {

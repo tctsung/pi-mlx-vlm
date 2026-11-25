@@ -65,13 +65,25 @@ If you used an Ollama Pi extension, remove it with `pi remove <source>` (`pi lis
 | In Pi | What it does |
 |---|---|
 | `/model` | Each pulled model has three entries: `mlx/<repo>` (no drafter), `mlx/<repo>@mtp`, `mlx/<repo>@dflash`. Switching between them, or to `ollama/*`, needs no restart. |
-| `/thinking` | Qwen3.8: `off`, `low`, `medium`, `high` (sent as `xhigh`). Qwen3.5: `off` or `medium` (on). This is the biggest speed lever. On Qwen3.8, the first request after a change re-reads the whole prompt (see [NOTES.md](NOTES.md)). |
+| `/thinking` | Qwen3.8: `off`, `low`, `medium`, `high` (sent as `xhigh`). Qwen3.5: `off` or `medium` (on). This is the biggest speed lever. On Qwen3.8, the first request after a change re-reads the whole prompt, as it does on Ollama. |
 | `/mlx setup [repo]` | Installs mlx-vlm (after asking), pulls a model with its drafters, starts the server. |
 | `/mlx pull <repo> [mtp\|dflash] [--draft <repo>]` | Like `ollama pull`. Downloads the target and the MTP drafter with `hf download`, and converts the DFlash drafter to 4-bit with `mlx_vlm.convert`. For models not in the catalog, pass `--draft`. |
 | `/mlx status` | Shows server state, loaded model, active drafter and pulled entries. |
 | `/mlx unload` | Frees the model's memory. The server stays up. To stop it entirely: `pkill -f mlx_vlm.server`. |
 
 The server starts on the first `mlx/*` request, or with `/mlx setup`. Before each request, the extension switches the drafter at runtime with `PATCH /v1/settings`. Nothing is restarted.
+
+## Memory and parallel requests
+
+All Pi sessions share one server, and it holds one model at a time, so opening more sessions doesn't load more models. These work like Ollama's:
+
+| Variable | Default | Ollama equivalent | Effect |
+|---|---|---|---|
+| `PI_MLX_KEEP_ALIVE` | `5m` | `OLLAMA_KEEP_ALIVE` | Unload the model after this much idle time, with nothing in flight or queued. Accepts `30s`, `10m`, `1h`, or plain seconds; `-1` keeps it loaded. |
+| `MLX_VLM_MAX_NUM_SEQS` | `1` | `OLLAMA_NUM_PARALLEL` | mlx-vlm's own setting for how many sequences decode at once. Further requests wait in the queue instead of each holding its own KV cache. |
+| `PI_MLX_PORT` | `8080` | port in `OLLAMA_HOST` | Server port, always on `127.0.0.1`. |
+
+The idle check runs in a small watchdog started next to the server, so it still works after Pi exits, and it exits with the server. Any mlx-vlm variable you set yourself (`MLX_VLM_*`, `APC_*`) overrides the extension's defaults. Set the variables in your shell profile (for example `export PI_MLX_KEEP_ALIVE=10m`). They take effect when the server starts, so after changing one, run `pkill -f mlx_vlm.server`; the next request starts the server again.
 
 ## Catalog
 

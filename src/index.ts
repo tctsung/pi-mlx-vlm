@@ -4,6 +4,7 @@ import { spawn } from "node:child_process";
 import { closeSync, existsSync, mkdirSync, openSync, readFileSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { basename, join } from "node:path";
+import { fileURLToPath } from "node:url";
 
 const HOST = "127.0.0.1";
 const PORT = Number(process.env.PI_MLX_PORT ?? 8080);
@@ -12,6 +13,7 @@ const AGENT_DIR = process.env.PI_CODING_AGENT_DIR ?? join(homedir(), ".pi", "age
 const CATALOG = join(AGENT_DIR, "mlx-vlm.json");
 const HOME = join(AGENT_DIR, "mlx-vlm");
 const LOG = join(HOME, "server.log");
+export const WATCHDOG = fileURLToPath(new URL("./keepalive.mjs", import.meta.url));
 
 type Method = "mtp" | "dflash";
 type ChatModel = Extract<ProviderModelConfig, { reasoning: boolean }> & { samplingParamsByThinkingLevel?: Record<string, Record<string, unknown>> };
@@ -93,7 +95,11 @@ export const fromOllama = (list: string) =>
   list.split("\n").slice(1).map((line) => line.split(/\s+/)[0]).flatMap((tag) => Object.keys(KNOWN).filter((k) => KNOWN[k].ollama?.includes(tag)));
 
 export const serverArgs = () => ["--host", HOST, "--port", String(PORT)];
-export const SERVER_ENV = { APC_ENABLED: "1", APC_DISK_ENABLED: "0" };
+export const SERVER_ENV = { APC_ENABLED: "1", APC_DISK_ENABLED: "0", MLX_VLM_MAX_NUM_SEQS: "1" };
+export const keepAlive = (v = process.env.PI_MLX_KEEP_ALIVE) => {
+  const m = /^(-?\d+)([smh]?)$/.exec(v?.trim() ?? "");
+  return m ? Number(m[1]) * { "": 1, s: 1, m: 60, h: 3600 }[m[2] as "" | "s" | "m" | "h"] : 300;
+};
 
 const bin = (name: string) =>
   [join(homedir(), ".local", "bin"), ...(process.env.PATH ?? "").split(":")].map((d) => join(d, name)).find((p) => existsSync(p));
@@ -117,7 +123,10 @@ async function ensureServer(ctx: ExtensionContext) {
   mkdirSync(HOME, { recursive: true });
   const log = openSync(LOG, "a");
   ctx.ui.setStatus("mlx", "mlx: starting server");
-  spawn(exe, serverArgs(), { detached: true, stdio: ["ignore", log, log], env: { ...process.env, ...SERVER_ENV } }).on("error", () => {}).unref();
+  const server = spawn(exe, serverArgs(), { detached: true, stdio: ["ignore", log, log], env: { ...SERVER_ENV, ...process.env } }).on("error", () => {});
+  server.unref();
+  const idle = keepAlive();
+  if (server.pid && idle >= 0) spawn(process.execPath, [WATCHDOG, SERVER, String(server.pid), String(idle)], { detached: true, stdio: "ignore" }).on("error", () => {}).unref();
   closeSync(log);
   try {
     for (let i = 0; i < 240; i++) {
@@ -151,7 +160,7 @@ export default function (pi: ExtensionAPI) {
   const commands: Record<string, (args: string, ctx: ExtensionContext) => Promise<unknown>> = {
     async pull(args, ctx) {
       const p = parsePullArgs(args);
-      if (!p) return say(ctx, "usage: /mlx pull <hf-repo> [mtp|dflash] [--draft <repo>]", "warning");
+      if (!p) return say(ctx, `usage: ${USAGE}`, "warning");
       const plan = planPull(p.target, p.methods, p.draft);
       for (const w of plan.warnings) say(ctx, w, "warning");
       for (const [cmd, a] of plan.steps) await run(ctx, cmd, a);
@@ -159,7 +168,7 @@ export default function (pi: ExtensionAPI) {
       mkdirSync(AGENT_DIR, { recursive: true });
       writeFileSync(CATALOG, JSON.stringify({ models: [...load().filter((m) => !plan.entries.some((e) => e.id === m.id)), ...plan.entries] }, null, 2));
       register();
-      say(ctx, `Added ${plan.entries.map((e) => `mlx/${e.id}`).join(", ")}. Switch with /model.`, "info");
+      say(ctx, `Added ${plan.entries.map((e) => `mlx/${e.id}`).join(", ")}. Switch with /model.`);
     },
     async setup(args, ctx) {
       if (!bin("mlx_vlm.server") || !bin("hf")) {
@@ -177,23 +186,20 @@ export default function (pi: ExtensionAPI) {
       await commands.pull(target, ctx);
       await ensureServer(ctx);
       const model = [`${target}@dflash`, `${target}@mtp`, target].map((id) => ctx.modelRegistry.find("mlx", id)).find(Boolean);
-      if (model && (await pi.setModel(model))) say(ctx, `Now using mlx/${model.id}. Ctrl+S in /model makes it the default.`, "info");
+      if (model && (await pi.setModel(model))) say(ctx, `Now using mlx/${model.id}. Ctrl+S in /model makes it the default.`);
     },
     async status(_, ctx) {
       const health = await api("/health").catch(() => undefined);
       const draft = health && (await api("/v1/settings")).current;
-      say(ctx, 
-        [
-          `server ${SERVER}: ${health ? `up, loaded ${health.loaded_model ?? "nothing"}` : "down (starts on the first mlx request)"}`,
-          draft ? `drafter: ${draft.draft_model ?? "none"} (${draft.draft_kind ?? "-"})` : "",
-          `models: ${load().map((m) => `mlx/${m.id}`).join(", ") || "none, run /mlx pull <repo>"}`,
-        ].filter(Boolean).join("\n"),
-        "info",
-      );
+      say(ctx, [
+        `server ${SERVER}: ${health ? `up, loaded ${health.loaded_model ?? "nothing"}` : "down (starts on the first mlx request)"}`,
+        draft ? `drafter: ${draft.draft_model ?? "none"} (${draft.draft_kind ?? "-"})` : "",
+        `models: ${load().map((m) => `mlx/${m.id}`).join(", ") || "none, run /mlx pull <repo>"}`,
+      ].filter(Boolean).join("\n"));
     },
     async unload(_, ctx) {
       const res = await api("/unload", { method: "POST" }).catch(() => undefined);
-      say(ctx, res ? `mlx-vlm unload: ${res.status}` : "mlx-vlm server is not running", "info");
+      say(ctx, res ? `mlx-vlm unload: ${res.status}` : "mlx-vlm server is not running");
     },
   };
 
@@ -208,7 +214,7 @@ export default function (pi: ExtensionAPI) {
     handler: async (args, ctx) => {
       const [sub = "", ...rest] = args.trim().split(/\s+/);
       const cmd = commands[sub];
-      if (!cmd) return say(ctx, `usage: ${USAGE}`, "info");
+      if (!cmd) return say(ctx, `usage: ${USAGE}`);
       await cmd(rest.join(" "), ctx).catch((err: Error) => say(ctx, `mlx: ${err.message}`, "error"));
     },
   });
