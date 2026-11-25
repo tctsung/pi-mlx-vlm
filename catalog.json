@@ -1,0 +1,12 @@
+{
+  "qwen3.8-27b": { "repo": "mlx-community/Qwen3.8-27B-4bit", "family": "qwen3.8", "gb": 16, "mtp": "mlx-community/Qwen3.8-27B-MTP-4bit", "dflash2": "z-lab/Qwen3.8-27B-DFlash2" },
+  "qwen3.8-27b-8bit": { "repo": "mlx-community/Qwen3.8-27B-8bit", "family": "qwen3.8", "gb": 30, "mtp": "mlx-community/Qwen3.8-27B-MTP-8bit", "dflash2": "z-lab/Qwen3.8-27B-DFlash2" },
+  "qwen3.5-9b": { "repo": "mlx-community/Qwen3.5-9B-4bit", "family": "qwen3.5", "gb": 6, "mtp": "mlx-community/Qwen3.5-9B-MTP-4bit", "dflash": "z-lab/Qwen3.5-9B-DFlash", "block": 4 },
+  "qwen3.5-4b": { "repo": "mlx-community/Qwen3.5-4B-4bit", "family": "qwen3.5", "gb": 3, "mtp": "mlx-community/Qwen3.5-4B-MTP-4bit", "dflash": "z-lab/Qwen3.5-4B-DFlash" },
+  "gemma4-31b": { "repo": "mlx-community/gemma-4-31B-it-4bit", "family": "gemma4", "gb": 18, "mtp": "mlx-community/gemma-4-31B-it-assistant-bf16", "dflash": "z-lab/gemma-4-31B-it-DFlash" },
+  "gemma4-26b-a4b": { "repo": "mlx-community/gemma-4-26B-A4B-it-4bit", "family": "gemma4", "gb": 15, "mtp": "mlx-community/gemma-4-26B-A4B-it-assistant-bf16", "dflash": "z-lab/gemma-4-26B-A4B-it-DFlash" },
+  "gemma4-e4b": { "repo": "mlx-community/gemma-4-E4B-it-4bit", "family": "gemma4", "gb": 5, "mtp": "mlx-community/gemma-4-E4B-it-assistant-bf16" },
+  "lfm2.5-2.6b": { "repo": "LiquidAI/LFM2.5-2.6B", "gb": 5, "dspark": "LiquidAI/LFM2.5-2.6B-DSpark" },
+  "lfm3-1.7b": { "repo": "LiquidAI/LFM3-1.7B", "gb": 3.5 },
+  "lfm3-vl-2b": { "repo": "LiquidAI/LFM3-VL-2B", "family": "lfm3-vl", "gb": 4 }
+}

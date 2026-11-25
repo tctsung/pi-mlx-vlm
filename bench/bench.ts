@@ -4,7 +4,7 @@ import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { homedir, tmpdir } from "node:os";
 import { join } from "node:path";
 import { parseArgs } from "node:util";
-import { KNOWN, toModels } from "../src/index.ts";
+import { known, toModels } from "../src/index.ts";
 
 const { values: opt } = parseArgs({
   options: {
@@ -21,12 +21,12 @@ const OLLAMA = "http://127.0.0.1:11434";
 const MLX = `http://127.0.0.1:${process.env.PI_MLX_PORT ?? 8080}`;
 const agentDir = process.env.PI_CODING_AGENT_DIR ?? join(homedir(), ".pi", "agent");
 const pairs = JSON.parse(readFileSync(join(agentDir, "mlx-vlm.json"), "utf8")).models.filter((m: any) => m.target === opt.mlx);
-const LABEL: Record<string, string> = { null: "mlx-vlm", mtp: "mlx-vlm + MTP", dflash: "mlx-vlm + DFlash" };
+const LABEL: Record<string, string> = { "": "mlx-vlm", mtp: "mlx-vlm + MTP", dflash: "mlx-vlm + DFlash", dflash2: "mlx-vlm + DFlash2", dspark: "mlx-vlm + DSpark" };
 
 type Config = { label: string; base: string; model: string; pi: string; draft?: { draft_model: string | null; draft_kind: string | null } };
 const configs: Config[] = [
   { label: "Ollama (MLX)", base: OLLAMA, model: opt.ollama!, pi: `ollama/${opt.ollama}` },
-  ...pairs.map((e: any) => ({ label: LABEL[String(e.kind)], base: MLX, model: e.target, pi: `mlx/${e.id}`, draft: { draft_model: e.draft, draft_kind: e.kind } })),
+  ...pairs.map((e: any) => ({ label: LABEL[e.id.split("@")[1] ?? ""], base: MLX, model: e.target, pi: `mlx/${e.id}`, draft: { draft_model: e.draft, draft_kind: e.kind } })),
 ];
 
 const PROMPTS = [
@@ -47,7 +47,7 @@ async function prepare(c: Config) {
   await stream(c, "Say hi.", 8, "off");
 }
 
-const [family] = toModels([{ id: opt.mlx!, target: opt.mlx!, draft: null, kind: null, family: KNOWN[opt.mlx!]?.family ?? "default" }]);
+const [family] = toModels([{ id: opt.mlx!, target: opt.mlx!, draft: null, kind: null, family: known(opt.mlx!)?.[1].family ?? "default" }]);
 const sampling = (thinking: string) => ({ ...family.samplingParams, ...(thinking === "off" ? family.samplingParamsByThinkingLevel?.off : {}) });
 
 async function stream(c: Config, prompt: string, maxTokens: number, thinking: string) {

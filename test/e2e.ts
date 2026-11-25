@@ -1,4 +1,4 @@
-// End-to-end check with real Pi, mlx-vlm and Ollama: fresh agent dir, pi install, /mlx model over RPC (confirm install, Enter on the target), chat on @mtp/@dflash, switch to ollama and back without restart, thinking levels, loopback-only listener.
+// End-to-end check with real Pi, mlx-vlm and Ollama: fresh agent dir, pi install, /mlx model over RPC (confirm install, Enter on the catalog name), chat on @mtp/@dflash, switch to ollama and back without restart, thinking levels, loopback-only listener.
 import assert from "node:assert/strict";
 import { execFileSync, spawn } from "node:child_process";
 import { mkdtempSync, writeFileSync } from "node:fs";
@@ -6,7 +6,7 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { createInterface } from "node:readline";
 
-const TARGET = process.env.E2E_TARGET ?? "mlx-community/Qwen3.5-9B-4bit";
+const TARGET = process.env.E2E_TARGET ?? "qwen3.5-9b";
 const OLLAMA = process.env.E2E_OLLAMA ?? "qwen3.5:9b-mlx";
 const PORT = process.env.PI_MLX_PORT ?? "8080";
 const repo = join(dirname(new URL(import.meta.url).pathname), "..");
