@@ -37,6 +37,53 @@ process.env.PI_CODING_AGENT_DIR = mkdtempSync(join(tmpdir(), "pi-mlx-"));
 const mod = await import("../src/index.ts");
 const { toModels, serverArgs, SERVER_ENV, keepAlive, WATCHDOG } = mod;
 const { CATALOG, known, planPull, parsePullArgs, setBlock } = await import("../src/models.mjs");
+const { registerSpeed, speedFromChunk, isFinalChunk, formatSpeed, SPEED_ENV } = await import("../src/speed.mjs");
+test("decode speed: read from a chunk's timings, format, and detect the final chunk", () => {
+  assert.equal(speedFromChunk({ timings: { predicted_per_second: 42 } }), 42);
+  assert.equal(speedFromChunk({ server_timings: { decode_per_second: 8.7 } }), 8.7);
+  assert.equal(speedFromChunk({ timings: { predicted_per_second: 0 } }), undefined);
+  assert.equal(speedFromChunk({}), undefined);
+  assert.equal(isFinalChunk({ usage: { completion_tokens: 1 }, choices: [] }), true);
+  assert.equal(isFinalChunk({ choices: [{ finish_reason: "stop", delta: {} }], usage: null }), false, "a finish chunk is not the last");
+  assert.equal(isFinalChunk({ choices: [{ delta: {} }], usage: null }), false);
+  assert.equal(formatSpeed(42), "42.0 tok/s");
+  assert.equal(formatSpeed(0), undefined);
+});
+
+function fakeSpeedApi() {
+  const handlers: Record<string, Function> = {};
+  const api = { on: (e: string, h: Function) => (handlers[e] = h) };
+  const ui = { setStatus: (k: string, v: string | undefined) => (ui.last = [k, v]) };
+  const ctx = (provider: string) => ({ hasUI: true, model: { provider }, ui });
+  return { api, handlers, ui, ctx };
+}
+
+test("decode speed: footer shows the final chunk rate for an mlx turn, ignored for other providers", () => {
+  const f = fakeSpeedApi();
+  registerSpeed(f.api, { env: {} });
+  assert.equal(typeof f.handlers.provider_stream_event, "function");
+  // a live content chunk: spec decoding spikes it to an absurd value, so it must not repaint
+  f.handlers.provider_stream_event({ data: { choices: [{ delta: { content: "x" } }], timings: { predicted_per_second: 142025 } } }, f.ctx("mlx"));
+  assert.equal(f.ui.last, undefined, "a spiky live chunk does not repaint the footer");
+  // the last chunk (usage present, no choices) carries the authoritative rate
+  f.handlers.provider_stream_event({ data: { choices: [], usage: { completion_tokens: 24 }, timings: { predicted_per_second: 58.6 } } }, f.ctx("mlx"));
+  assert.deepEqual(f.ui.last, ["mlx-tok-s", "58.6 tok/s"]);
+});
+
+test("decode speed: disabled by PI_MLX_SPEED", () => {
+  const f = fakeSpeedApi();
+  registerSpeed(f.api, { env: { PI_MLX_SPEED: "0" } });
+  assert.equal(f.handlers.provider_stream_event, undefined);
+  const g = fakeSpeedApi();
+  registerSpeed(g.api, { env: { PI_MLX_SPEED: "false" } });
+  assert.equal(g.handlers.provider_stream_event, undefined, "PI_MLX_SPEED=false also disables");
+});
+
+test("extension wires the speed readout without crashing", () => {
+  const f = fakePi();
+  assert.doesNotThrow(() => mod.default(f.pi as any));
+});
+
 test.after(() => fake.close());
 
 const Q35 = "mlx-community/Qwen3.5-9B-4bit";

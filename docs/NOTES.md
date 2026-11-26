@@ -21,9 +21,9 @@ Test model `mlx-community/Qwen3.5-9B-4bit` with `mlx-community/Qwen3.5-9B-MTP-4b
 
 ![Decode speed: Ollama vs mlx-vlm with drafters](../bench/speed.svg)
 
-Drawn by `bench/chart.ts` from `bench/results.json`, on the M3 Pro (36 GB) only so far. Ollama's `qwen3.8:27b-mlx` tag has MTP built in, which is why it leads on the 27B.
+Drawn by `bench/chart.ts` from every `bench/*.json`, on the M5 Ultra (96 GB) and M3 Pro (36 GB). The 4-bit Qwen3.8 27B is the fair same-quant cross-chip comparison: M5 Ultra decodes ~5× the M3 Pro. Ollama's `qwen3.8:27b-mlx` tag has MTP built in, which is why it leads mlx-vlm-without-a-drafter on the 27B.
 
-Next: run the bench on a Mac Studio and a 16 GB MacBook Pro, then put the chart in the README. On 16 GB, skip the 27B and 31B models (16-18 GB of weights) and use qwen3.5-9b, qwen3.5-4b, gemma4-e4b and lfm2.5-2.6b.
+Next: a 16 GB MacBook Pro. On 16 GB, skip the 27B and 31B models (16-18 GB of weights) and use qwen3.5-9b, qwen3.5-4b, gemma4-e4b and lfm2.5-2.6b.
 
 ## Findings that changed the design
 

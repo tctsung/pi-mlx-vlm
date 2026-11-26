@@ -6,6 +6,7 @@ import { createServer, type AddressInfo } from "node:net";
 import { basename, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { HOME, LABEL, PULLED, bin, load as loadAny, method } from "./models.mjs";
+import { registerSpeed } from "./speed.mjs";
 
 const HOST = "127.0.0.1";
 const LOG = join(HOME, "server.log");
@@ -156,6 +157,9 @@ export default function (pi: ExtensionAPI) {
   const refresh = () => register();
   watchFile(PULLED, { interval: 2000 }, refresh).unref();
   pi.on("session_shutdown", () => unwatchFile(PULLED, refresh));
+
+  // Surface the decode speed (tok/s) mlx-vlm reports per chunk; off with PI_MLX_SPEED=0.
+  registerSpeed(pi, process.env);
 
   pi.registerCommand("mlx", {
     description: `mlx-vlm: ${USAGE}`,

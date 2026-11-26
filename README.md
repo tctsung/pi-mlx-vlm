@@ -33,6 +33,14 @@ The first pull asks to install mlx-vlm with uv. Models: [mlx-community](https://
 | `/mlx status` | Server, loaded model, drafter. |
 | `/mlx unload` | Free the model's memory now. |
 
+## Decode speed
+
+Ollama-style: the mlx-vlm decode speed (tok/s) shows in Pi's footer after each turn, and the same number is the chart's bars.
+
+![Decode speed: Ollama vs mlx-vlm with drafters](bench/speed.svg)
+
+Same 4-bit Qwen3.8 27B on two machines — M5 Ultra is ~5× the M3 Pro. A drafter recovers most of the gap between mlx-vlm and Ollama on every chip.
+
 ## Config
 
 Environment variables, read when the server starts (restart it with `pkill -f mlx_vlm.server`).
